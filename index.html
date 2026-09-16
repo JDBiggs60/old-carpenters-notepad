@@ -77,6 +77,8 @@ body.large{font-size:19px} body.xlarge{font-size:22px}
 </nav>
 </div>
 <script>
+const SUPABASE_URL="https://gupquxmhdrpwqvyuirsl.supabase.co";
+const SUPABASE_KEY="sb_publishable_TwCowZOvcHHKArXG5ncgqg_1fRFBo-A";
 const KEY="ocn_notes_v1"; let notes=JSON.parse(localStorage.getItem(KEY)||"null")||[
 {id:crypto.randomUUID(),title:"Grocery List",body:"",type:"check",items:[{t:"Milk",done:false},{t:"Eggs",done:false},{t:"Bread",done:false}],pinned:true,trash:false,modified:Date.now()},
 {id:crypto.randomUUID(),title:"Pen Blank Ideas",body:"Honeysuckle in resin\nRice Krispies blank\nInsect inclusion tests",type:"text",items:[],pinned:false,trash:false,modified:Date.now()-5000},
