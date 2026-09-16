@@ -86,7 +86,17 @@ const KEY="ocn_notes_v1"; let notes=JSON.parse(localStorage.getItem(KEY)||"null"
 {id:crypto.randomUUID(),title:"Pen Blank Ideas",body:"Honeysuckle in resin\nRice Krispies blank\nInsect inclusion tests",type:"text",items:[],pinned:false,trash:false,modified:Date.now()-5000},
 {id:crypto.randomUUID(),title:"CNC Plasma Ideas",body:"Keep shielding, grounding and EMI control on the build checklist.",type:"text",items:[],pinned:false,trash:false,modified:Date.now()-9000}
 ]; let current=null, pinnedOnly=false;
-function persist(){localStorage.setItem(KEY,JSON.stringify(notes))}
+async function persist(){
+  localStorage.setItem(KEY,JSON.stringify(notes));
+  const testNote={
+    title:"Supabase Connection Test",
+    content:"If you can see this row, the notepad is connected to Supabase.",
+    category:"test",
+    pinned:false
+  };
+  const {error}=await db.from("notes").insert(testNote);
+  if(error) console.error("Supabase test failed:",error);
+}
 function esc(s){return (s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function screens(id){["notesScreen","editorScreen","voiceScreen","moreScreen"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id))}
 function showNotes(){saveCurrent();screens("notesScreen");render()}
