@@ -66,7 +66,7 @@ body.large{font-size:19px} body.xlarge{font-size:22px}
 <section id="moreScreen" class="screen hidden">
 <div class="card"><h3>Settings</h3><label>Text size</label><select id="fontSize" onchange="setFont(this.value)"><option value="">Normal</option><option value="large">Large</option><option value="xlarge">Extra Large</option></select></div>
 <div class="card"><h3>Trash</h3><div id="trash"></div></div>
-<div class="card help"><h3>About</h3><b>Old Carpenter's Notepad</b><br>Simple notes. No nonsense.<br><br>This prototype stores your notes in this browser on this device.</div>
+<div class="card help"><h3>About</h3><b>Old Carpenter's Notepad</b><br>Simple notes. No nonsense.<br><br>Your notes are saved automatically in this browser on this device.</div>
 </section>
 
 <nav>
@@ -76,27 +76,13 @@ body.large{font-size:19px} body.xlarge{font-size:22px}
 <button onclick="showMore()"><b>⚙️</b>More</button>
 </nav>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL="https://gupquxmhdrpwqvyuirsl.supabase.co";
-const SUPABASE_KEY="sb_publishable_TwCowZOvcHHKArXG5ncgqg_1fRFBo-A";
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const KEY="ocn_notes_v1"; let notes=JSON.parse(localStorage.getItem(KEY)||"null")||[
 {id:crypto.randomUUID(),title:"Grocery List",body:"",type:"check",items:[{t:"Milk",done:false},{t:"Eggs",done:false},{t:"Bread",done:false}],pinned:true,trash:false,modified:Date.now()},
 {id:crypto.randomUUID(),title:"Pen Blank Ideas",body:"Honeysuckle in resin\nRice Krispies blank\nInsect inclusion tests",type:"text",items:[],pinned:false,trash:false,modified:Date.now()-5000},
 {id:crypto.randomUUID(),title:"CNC Plasma Ideas",body:"Keep shielding, grounding and EMI control on the build checklist.",type:"text",items:[],pinned:false,trash:false,modified:Date.now()-9000}
 ]; let current=null, pinnedOnly=false;
-async function persist(){
-  localStorage.setItem(KEY,JSON.stringify(notes));
-  const testNote={
-    title:"Supabase Connection Test",
-    content:"If you can see this row, the notepad is connected to Supabase.",
-    category:"test",
-    pinned:false
-  };
-  const {error}=await db.from("notes").insert(testNote);
-  if(error) console.error("Supabase test failed:",error);
-}
+function persist(){localStorage.setItem(KEY,JSON.stringify(notes))}
 function esc(s){return (s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function screens(id){["notesScreen","editorScreen","voiceScreen","moreScreen"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id))}
 function showNotes(){saveCurrent();screens("notesScreen");render()}
