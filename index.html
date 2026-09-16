@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#4b2d1b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Old Carpenter's Notepad">
+<title>Old Carpenter's Notepad</title>
+<style>
+:root{--brown:#4b2d1b;--paper:#fff2a8;--cream:#fff8dc;--ink:#2f2118;--line:#d7c77b;--red:#b44b3d}
+*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#eee;color:var(--ink)}
+.app{max-width:520px;min-height:100vh;margin:auto;background:var(--paper);background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 31px,var(--line) 32px);padding-bottom:92px}
+header{position:sticky;top:0;z-index:5;background:var(--brown);color:white;padding:18px 16px 14px;box-shadow:0 2px 7px #0004}
+header h1{font-family:Georgia,serif;margin:0 0 10px;font-size:25px} .search{display:flex;gap:8px}
+input,textarea,select,button{font:inherit} input,textarea,select{width:100%;border:1px solid #bcae76;border-radius:12px;padding:12px;background:#fffdf2;color:#222}
+textarea{min-height:210px;resize:vertical;line-height:1.5}
+button{border:0;border-radius:12px;padding:11px 14px;background:var(--brown);color:white;font-weight:650}
+button.secondary{background:#e9dfb0;color:#392619} button.danger{background:#9f3f35}
+.toolbar{display:flex;gap:8px;padding:12px 14px;overflow:auto;background:#fff6c7cc;backdrop-filter:blur(4px)}
+.card{margin:12px 14px;padding:14px;border-radius:14px;background:#fff9d9dd;box-shadow:0 2px 8px #4b2d1b22;border:1px solid #d5c98e}
+.card h3{margin:0 0 6px;font-family:Georgia,serif;font-size:20px}.meta{font-size:12px;opacity:.65}.preview{margin-top:7px;white-space:pre-wrap}
+.fab{position:fixed;right:max(22px,calc((100vw - 520px)/2 + 22px));bottom:78px;width:58px;height:58px;border-radius:50%;font-size:31px;box-shadow:0 4px 12px #0005}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);display:grid;grid-template-columns:repeat(4,1fr);background:#fff9dc;border-top:1px solid #cdbf83;padding:7px 5px calc(7px + env(safe-area-inset-bottom))}
+nav button{background:transparent;color:#51351f;padding:6px;font-size:12px} nav b{display:block;font-size:21px}
+.hidden{display:none!important}.screen{padding-bottom:8px}.editor{padding:14px}.editor .row,.row{display:flex;gap:8px;margin:9px 0}.title{font-weight:750;font-size:18px}
+.checkitem{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #d7c77b}.checkitem input[type=checkbox]{width:22px;height:22px}.checkitem span{flex:1}
+.voicebox{text-align:center;padding:22px 14px}.mic{width:92px;height:92px;border-radius:50%;font-size:42px;margin:12px}.status{min-height:44px;padding:10px;background:#fff8d5;border-radius:10px}
+.help{font-size:14px;line-height:1.45}.empty{text-align:center;padding:45px 20px;opacity:.7}
+body.large{font-size:19px} body.xlarge{font-size:22px}
+</style>
+</head>
+<body>
+<div class="app">
+<header><h1>Old Carpenter's Notepad</h1><div class="search"><input id="search" placeholder="Search notes…"><button onclick="showVoice()">🎙</button></div></header>
+
+<section id="notesScreen" class="screen">
+<div class="toolbar"><button onclick="newNote()">+ Quick Note</button><button class="secondary" onclick="newChecklist()">☑ Checklist</button><button class="secondary" onclick="filterPinned()">📌 Pinned</button></div>
+<div id="notes"></div>
+<button class="fab" onclick="newNote()">+</button>
+</section>
+
+<section id="editorScreen" class="screen hidden">
+<div class="editor">
+<div class="row"><button class="secondary" onclick="saveAndHome()">← Notes</button><button id="pinBtn" class="secondary" onclick="togglePin()">📌 Pin</button><button class="danger" onclick="trashCurrent()">Trash</button></div>
+<input id="noteTitle" class="title" placeholder="Note title">
+<div id="textEditor"><textarea id="noteBody" placeholder="Start writing…"></textarea></div>
+<div id="checkEditor" class="hidden"><div id="checkItems"></div><div class="row"><input id="newItem" placeholder="Add an item…"><button onclick="addChecklistItem()">Add</button></div></div>
+<div class="meta" id="savedMsg">Autosaves as you type.</div>
+</div>
+</section>
+
+<section id="voiceScreen" class="screen hidden">
+<div class="voicebox">
+<h2>Voice Command</h2><p>Try: <b>“Add a can of beans to my grocery list.”</b></p>
+<button class="mic" onclick="listen()">🎙</button>
+<div class="status" id="voiceStatus">Tap the microphone and speak, or type a command below.</div>
+<div class="row"><input id="commandText" placeholder="Type a command…"><button onclick="runTypedCommand()">Do it</button></div>
+<div class="card help"><b>Examples</b><br>Add milk to my grocery list<br>Create a note called Pen Blank Ideas<br>Find my note about plasma cutter<br>Add a to-do call the plumber</div>
+</div>
+</section>
+
+<section id="moreScreen" class="screen hidden">
+<div class="card"><h3>Settings</h3><label>Text size</label><select id="fontSize" onchange="setFont(this.value)"><option value="">Normal</option><option value="large">Large</option><option value="xlarge">Extra Large</option></select></div>
+<div class="card"><h3>Trash</h3><div id="trash"></div></div>
+<div class="card help"><h3>About</h3><b>Old Carpenter's Notepad</b><br>Simple notes. No nonsense.<br><br>This prototype stores your notes in this browser on this device.</div>
+</section>
+
+<nav>
+<button onclick="showNotes()"><b>📝</b>Notes</button>
+<button onclick="openGrocery()"><b>☑</b>Grocery</button>
+<button onclick="showVoice()"><b>🎙</b>Voice</button>
+<button onclick="showMore()"><b>⚙️</b>More</button>
+</nav>
+</div>
+<script>
+const KEY="ocn_notes_v1"; let notes=JSON.parse(localStorage.getItem(KEY)||"null")||[
+{id:crypto.randomUUID(),title:"Grocery List",body:"",type:"check",items:[{t:"Milk",done:false},{t:"Eggs",done:false},{t:"Bread",done:false}],pinned:true,trash:false,modified:Date.now()},
+{id:crypto.randomUUID(),title:"Pen Blank Ideas",body:"Honeysuckle in resin\nRice Krispies blank\nInsect inclusion tests",type:"text",items:[],pinned:false,trash:false,modified:Date.now()-5000},
+{id:crypto.randomUUID(),title:"CNC Plasma Ideas",body:"Keep shielding, grounding and EMI control on the build checklist.",type:"text",items:[],pinned:false,trash:false,modified:Date.now()-9000}
+]; let current=null, pinnedOnly=false;
+function persist(){localStorage.setItem(KEY,JSON.stringify(notes))}
+function esc(s){return (s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function screens(id){["notesScreen","editorScreen","voiceScreen","moreScreen"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id))}
+function showNotes(){saveCurrent();screens("notesScreen");render()}
+function render(){let q=document.getElementById("search").value.toLowerCase();let a=notes.filter(n=>!n.trash&&(!pinnedOnly||n.pinned)&&((n.title+" "+n.body+" "+(n.items||[]).map(i=>i.t).join(" ")).toLowerCase().includes(q))).sort((a,b)=>(b.pinned-a.pinned)||(b.modified-a.modified));let el=document.getElementById("notes");el.innerHTML=a.length?a.map(n=>`<div class="card" onclick="openNote('${n.id}')"><h3>${n.pinned?"📌 ":""}${esc(n.title||"Untitled")}</h3><div class="preview">${n.type==="check"?(n.items.filter(i=>!i.done).length+" items left"):esc((n.body||"").slice(0,110))}</div><div class="meta">${new Date(n.modified).toLocaleString()}</div></div>`).join(""):`<div class="empty">No notes found.</div>`}
+document.getElementById("search").addEventListener("input",render)
+function newNote(){let n={id:crypto.randomUUID(),title:"",body:"",type:"text",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);persist();openNote(n.id)}
+function newChecklist(){let n={id:crypto.randomUUID(),title:"New Checklist",body:"",type:"check",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);persist();openNote(n.id)}
+function openNote(id){saveCurrent();current=notes.find(n=>n.id===id);screens("editorScreen");document.getElementById("noteTitle").value=current.title;document.getElementById("noteBody").value=current.body||"";document.getElementById("textEditor").classList.toggle("hidden",current.type!=="text");document.getElementById("checkEditor").classList.toggle("hidden",current.type!=="check");document.getElementById("pinBtn").textContent=current.pinned?"📌 Pinned":"📌 Pin";renderChecks()}
+function saveCurrent(){if(!current)return;current.title=document.getElementById("noteTitle").value;current.body=document.getElementById("noteBody").value;current.modified=Date.now();persist()}
+["noteTitle","noteBody"].forEach(id=>document.getElementById(id).addEventListener("input",()=>{saveCurrent();document.getElementById("savedMsg").textContent="Saved "+new Date().toLocaleTimeString()}))
+function saveAndHome(){showNotes();current=null}
+function togglePin(){current.pinned=!current.pinned;persist();document.getElementById("pinBtn").textContent=current.pinned?"📌 Pinned":"📌 Pin"}
+function trashCurrent(){if(confirm("Move this note to Trash?")){current.trash=true;persist();current=null;showNotes()}}
+function renderChecks(){if(!current||current.type!=="check")return;document.getElementById("checkItems").innerHTML=current.items.map((i,x)=>`<div class="checkitem"><input type="checkbox" ${i.done?"checked":""} onchange="toggleItem(${x})"><span style="${i.done?"text-decoration:line-through;opacity:.55":""}">${esc(i.t)}</span><button class="secondary" onclick="delItem(${x})">×</button></div>`).join("")}
+function addChecklistItem(){let v=document.getElementById("newItem").value.trim();if(!v)return;current.items.push({t:v,done:false});document.getElementById("newItem").value="";current.modified=Date.now();persist();renderChecks()}
+function toggleItem(i){current.items[i].done=!current.items[i].done;persist();renderChecks()} function delItem(i){current.items.splice(i,1);persist();renderChecks()}
+function openGrocery(){let n=notes.find(n=>!n.trash&&n.title.toLowerCase()==="grocery list");if(!n){n={id:crypto.randomUUID(),title:"Grocery List",body:"",type:"check",items:[],pinned:true,trash:false,modified:Date.now()};notes.push(n);persist()}openNote(n.id)}
+function filterPinned(){pinnedOnly=!pinnedOnly;render()}
+function showVoice(){saveCurrent();screens("voiceScreen")}
+function command(c){let s=c.trim();document.getElementById("voiceStatus").textContent="Heard: “"+s+"”";let m=s.match(/^add (.+?) to (?:my |the )?grocery list[.!]?$/i);if(m){let item=m[1].replace(/^a |^an /i,"");let g=notes.find(n=>!n.trash&&n.title.toLowerCase()==="grocery list");if(!g){g={id:crypto.randomUUID(),title:"Grocery List",type:"check",items:[],body:"",pinned:true,trash:false,modified:Date.now()};notes.push(g)}g.items.push({t:item.charAt(0).toUpperCase()+item.slice(1),done:false});g.modified=Date.now();persist();document.getElementById("voiceStatus").textContent="✓ Added “"+item+"” to Grocery List.";return}
+m=s.match(/^create (?:a )?(?:new )?note called (.+)$/i);if(m){notes.push({id:crypto.randomUUID(),title:m[1],body:"",type:"text",items:[],pinned:false,trash:false,modified:Date.now()});persist();document.getElementById("voiceStatus").textContent="✓ Created note “"+m[1]+"”.";return}
+m=s.match(/^add (?:a )?to-do[: ]+(.+)$/i);if(m){let n=notes.find(n=>!n.trash&&n.title==="To Do")||{id:crypto.randomUUID(),title:"To Do",body:"",type:"check",items:[],pinned:true,trash:false,modified:Date.now()};if(!notes.includes(n))notes.push(n);n.items.push({t:m[1],done:false});persist();document.getElementById("voiceStatus").textContent="✓ Added to To Do.";return}
+m=s.match(/find (?:my )?note about (.+)/i);if(m){let q=m[1].toLowerCase(),n=notes.find(n=>!n.trash&&(n.title+" "+n.body).toLowerCase().includes(q));if(n){openNote(n.id)}else document.getElementById("voiceStatus").textContent="I couldn't find a matching note.";return}
+document.getElementById("voiceStatus").textContent="I’m not sure what that means. Try one of the examples below."}
+function runTypedCommand(){command(document.getElementById("commandText").value)}
+function listen(){let SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){document.getElementById("voiceStatus").textContent="Voice recognition isn't available in this browser. Type the command below instead.";return}let r=new SR();r.lang="en-US";r.interimResults=false;r.onstart=()=>document.getElementById("voiceStatus").textContent="Listening…";r.onerror=e=>document.getElementById("voiceStatus").textContent="Voice error: "+e.error;r.onresult=e=>command(e.results[0][0].transcript);r.start()}
+function showMore(){saveCurrent();screens("moreScreen");renderTrash()}
+function renderTrash(){let a=notes.filter(n=>n.trash);document.getElementById("trash").innerHTML=a.length?a.map(n=>`<div class="row"><span style="flex:1">${esc(n.title||"Untitled")}</span><button class="secondary" onclick="restore('${n.id}')">Restore</button><button class="danger" onclick="purge('${n.id}')">Delete</button></div>`).join(""):"Trash is empty."}
+function restore(id){notes.find(n=>n.id===id).trash=false;persist();renderTrash()} function purge(id){if(confirm("Delete permanently?")){notes=notes.filter(n=>n.id!==id);persist();renderTrash()}}
+function setFont(v){document.body.className=v;localStorage.setItem("ocn_font",v)} document.getElementById("fontSize").value=localStorage.getItem("ocn_font")||"";setFont(localStorage.getItem("ocn_font")||"")
+render();persist();
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js").catch(()=>{}));
+}
+</script>
+</body></html>
