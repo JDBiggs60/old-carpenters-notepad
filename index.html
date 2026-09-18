@@ -12,33 +12,53 @@
 <title>Old Carpenter's Notepad</title>
 <style>
 :root{--brown:#4b2d1b;--paper:#fff2a8;--cream:#fff8dc;--ink:#2f2118;--line:#d7c77b;--red:#b44b3d}
-*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#eee;color:var(--ink)}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#eee;color:var(--ink)}
 .app{max-width:520px;min-height:100vh;margin:auto;background:var(--paper);background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 31px,var(--line) 32px);padding-bottom:92px}
 header{position:sticky;top:0;z-index:5;background:var(--brown);color:white;padding:18px 16px 14px;box-shadow:0 2px 7px #0004}
-header h1{font-family:Georgia,serif;margin:0 0 10px;font-size:25px} .search{display:flex;gap:8px}
-input,textarea,select,button{font:inherit} input,textarea,select{width:100%;border:1px solid #bcae76;border-radius:12px;padding:12px;background:#fffdf2;color:#222}
+header h1{font-family:Georgia,serif;margin:0 0 10px;font-size:25px;text-align:center}
+.search{display:flex;gap:8px}
+input,textarea,select,button{font:inherit}
+input,textarea,select{width:100%;border:1px solid #bcae76;border-radius:12px;padding:12px;background:#fffdf2;color:#222}
 textarea{min-height:210px;resize:vertical;line-height:1.5}
-button{border:0;border-radius:12px;padding:11px 14px;background:var(--brown);color:white;font-weight:650}
-button.secondary{background:#e9dfb0;color:#392619} button.danger{background:#9f3f35}
+button{border:0;border-radius:12px;padding:11px 14px;background:var(--brown);color:white;font-weight:650;cursor:pointer}
+button.secondary{background:#e9dfb0;color:#392619}
+button.danger{background:#9f3f35}
+button:disabled{opacity:.55;cursor:not-allowed}
 .toolbar{display:flex;gap:8px;padding:12px 14px;overflow:auto;background:#fff6c7cc;backdrop-filter:blur(4px)}
 .card{margin:12px 14px;padding:14px;border-radius:14px;background:#fff9d9dd;box-shadow:0 2px 8px #4b2d1b22;border:1px solid #d5c98e}
-.card h3{margin:0 0 6px;font-family:Georgia,serif;font-size:20px}.meta{font-size:12px;opacity:.65}.preview{margin-top:7px;white-space:pre-wrap}
+.card h3{margin:0 0 6px;font-family:Georgia,serif;font-size:20px}
+.meta{font-size:12px;opacity:.65}
+.preview{margin-top:7px;white-space:pre-wrap}
 .fab{position:fixed;right:max(22px,calc((100vw - 520px)/2 + 22px));bottom:78px;width:58px;height:58px;border-radius:50%;font-size:31px;box-shadow:0 4px 12px #0005}
 nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);display:grid;grid-template-columns:repeat(4,1fr);background:#fff9dc;border-top:1px solid #cdbf83;padding:7px 5px calc(7px + env(safe-area-inset-bottom))}
-nav button{background:transparent;color:#51351f;padding:6px;font-size:12px} nav b{display:block;font-size:21px}
-.hidden{display:none!important}.screen{padding-bottom:8px}.editor{padding:14px}.editor .row,.row{display:flex;gap:8px;margin:9px 0}.title{font-weight:750;font-size:18px}
-.checkitem{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #d7c77b}.checkitem input[type=checkbox]{width:22px;height:22px}.checkitem span{flex:1}
-.voicebox{text-align:center;padding:22px 14px}.mic{width:92px;height:92px;border-radius:50%;font-size:42px;margin:12px}.status{min-height:44px;padding:10px;background:#fff8d5;border-radius:10px}
-.help{font-size:14px;line-height:1.45}.empty{text-align:center;padding:45px 20px;opacity:.7}
-body.large{font-size:19px} body.xlarge{font-size:22px}
-
+nav button{background:transparent;color:#51351f;padding:6px;font-size:12px}
+nav b{display:block;font-size:21px}
+.hidden{display:none!important}
+.screen{padding-bottom:8px}
+.editor{padding:14px}
+.editor .row,.row{display:flex;gap:8px;margin:9px 0}
+.title{font-weight:750;font-size:18px}
+.checkitem{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #d7c77b}
+.checkitem input[type=checkbox]{width:22px;height:22px}
+.checkitem span{flex:1}
+.voicebox{text-align:center;padding:22px 14px}
+.mic{width:92px;height:92px;border-radius:50%;font-size:42px;margin:12px}
+.status{min-height:44px;padding:10px;background:#fff8d5;border-radius:10px}
+.help{font-size:14px;line-height:1.45}
+.empty{text-align:center;padding:45px 20px;opacity:.7}
+body.large{font-size:19px}
+body.xlarge{font-size:22px}
 .authwrap{max-width:520px;min-height:100vh;margin:auto;background:#fff8dc;padding:28px 18px;color:#2f2118}
 .authcard{margin-top:40px;padding:20px;border-radius:16px;background:#fff9d9;border:1px solid #d5c98e;box-shadow:0 2px 8px #4b2d1b22}
-.authcard h2{font-family:Georgia,serif;margin-top:0}
+.authcard h2{font-family:Georgia,serif;margin-top:0;text-align:center}
 .authcard .row{display:flex;gap:8px}
 .authmsg{min-height:24px;margin-top:10px;font-size:14px}
-.syncbar{font-size:12px;padding:6px 14px;background:#fff6c7;border-bottom:1px solid #d5c98e}
-
+.syncbar{font-size:12px;padding:6px 14px;background:#fff6c7;border-bottom:1px solid #d5c98e;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.passwordrow{display:flex;gap:8px}
+.passwordrow button{white-space:nowrap}
+.notice{font-size:13px;line-height:1.35}
+@media(min-width:700px){.app,.authwrap{box-shadow:0 0 24px #0002}}
 </style>
 </head>
 <body>
@@ -49,29 +69,41 @@ body.large{font-size:19px} body.xlarge{font-size:22px}
     <p>Sign in to keep your notes synced between devices.</p>
     <input id="authEmail" type="email" autocomplete="email" placeholder="Email address">
     <div style="height:10px"></div>
-   <div style="display:flex;gap:8px">
-  <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password">
-  <button type="button" class="secondary" onclick="togglePassword()">👁 Show</button>
-</div>
+    <div class="passwordrow">
+      <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password">
+      <button id="showAuthPassword" type="button" class="secondary" onclick="togglePassword('authPassword','showAuthPassword')">👁 Show</button>
+    </div>
     <div class="row">
-      <button onclick="signIn()">Sign In</button>
+      <button id="signInBtn" onclick="signIn()">Sign In</button>
       <button class="secondary" onclick="signUp()">Create Account</button>
     </div>
-<div id="resetBox" class="hidden">
-  <input id="newPassword" type="password" placeholder="Enter new password">
-  <button type="button" onclick="updatePassword()">Set New Password</button>
-</div>
+    <div class="row">
+      <button class="secondary" onclick="requestPasswordReset()">Forgot password?</button>
+    </div>
+
+    <div id="resetBox" class="hidden">
+      <p><b>Choose a new password</b></p>
+      <div class="passwordrow">
+        <input id="newPassword" type="password" autocomplete="new-password" placeholder="Enter new password">
+        <button id="showNewPassword" type="button" class="secondary" onclick="togglePassword('newPassword','showNewPassword')">👁 Show</button>
+      </div>
+      <div class="row"><button type="button" onclick="updatePassword()">Set New Password</button></div>
+    </div>
     <div id="authMsg" class="authmsg"></div>
   </div>
 </div>
 
 <div id="appRoot" class="app hidden">
-<header><h1>Old Carpenter's Notepad</h1><div class="search"><input id="search" placeholder="Search notes…"><button onclick="showVoice()">🎙</button></div></header><div class="syncbar"><span id="syncStatus">Starting…</span> · <button class="secondary" style="padding:4px 8px;font-size:12px" onclick="signOut()">Sign out</button></div>
+<header>
+  <h1>Old Carpenter's Notepad</h1>
+  <div class="search"><input id="search" placeholder="Search notes…"><button aria-label="Voice commands" onclick="showVoice()">🎙</button></div>
+</header>
+<div class="syncbar"><span id="syncStatus">Starting…</span><button class="secondary" style="padding:4px 8px;font-size:12px" onclick="signOut()">Sign out</button></div>
 
 <section id="notesScreen" class="screen">
-<div class="toolbar"><button onclick="newNote()">+ Quick Note</button><button class="secondary" onclick="newChecklist()">☑ Checklist</button><button class="secondary" onclick="filterPinned()">📌 Pinned</button></div>
+<div class="toolbar"><button onclick="newNote()">+ Quick Note</button><button class="secondary" onclick="newChecklist()">☑ Checklist</button><button id="pinnedBtn" class="secondary" onclick="filterPinned()">📌 Pinned</button></div>
 <div id="notes"></div>
-<button class="fab" onclick="newNote()">+</button>
+<button class="fab" onclick="newNote()" aria-label="New note">+</button>
 </section>
 
 <section id="editorScreen" class="screen hidden">
@@ -107,6 +139,7 @@ body.large{font-size:19px} body.xlarge{font-size:22px}
 <button onclick="showMore()"><b>⚙️</b>More</button>
 </nav>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL="https://gupquxmhdrpwqvyuirsl.supabase.co";
@@ -115,27 +148,21 @@ const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 const LEGACY_KEY="ocn_notes_v1";
 const USER_KEY_PREFIX="ocn_notes_user_";
-let notes=[];
-let current=null,pinnedOnly=false,currentUser=null,syncTimer=null,booting=true;
+let notes=[],current=null,pinnedOnly=false,currentUser=null,syncTimer=null;
+let booting=true,recoveryMode=false,realtimeChannel=null,lastRealtimeRefresh=0;
 
-function safeParse(raw,fallback){
-  try{return raw?JSON.parse(raw):fallback}catch{return fallback}
-}
+function safeParse(raw,fallback){try{return raw?JSON.parse(raw):fallback}catch{return fallback}}
 function userKey(){return currentUser?USER_KEY_PREFIX+currentUser.id:null}
-function loadUserLocal(){
-  const key=userKey();
-  notes=key?safeParse(localStorage.getItem(key),[]):[];
-}
-function localSave(){
-  const key=userKey();
-  if(key)localStorage.setItem(key,JSON.stringify(notes));
-}
-function setSyncStatus(t){
-  const el=document.getElementById("syncStatus");
-  if(el)el.textContent=t;
-}
-function authMessage(t){
-  document.getElementById("authMsg").textContent=t||"";
+function loadUserLocal(){const key=userKey();notes=key?safeParse(localStorage.getItem(key),[]):[]}
+function localSave(){const key=userKey();if(key)localStorage.setItem(key,JSON.stringify(notes))}
+function setSyncStatus(t){const el=document.getElementById("syncStatus");if(el)el.textContent=t}
+function authMessage(t){document.getElementById("authMsg").textContent=t||""}
+function friendlyError(error,fallback="Something went wrong. Please try again."){
+  const m=(error?.message||String(error||"")).toLowerCase();
+  if(m.includes("invalid login credentials"))return "The email address or password is incorrect.";
+  if(m.includes("email rate limit"))return "Too many emails were requested. Please wait a while and try once.";
+  if(m.includes("network")||m.includes("fetch"))return "Could not reach the cloud. Check your internet connection and try again.";
+  return error?.message||fallback;
 }
 function showAuth(msg=""){
   document.getElementById("authWrap").classList.remove("hidden");
@@ -143,8 +170,15 @@ function showAuth(msg=""){
   authMessage(msg);
 }
 function showApp(){
+  if(recoveryMode)return;
   document.getElementById("authWrap").classList.add("hidden");
   document.getElementById("appRoot").classList.remove("hidden");
+}
+function togglePassword(inputId,buttonId){
+  const input=document.getElementById(inputId),btn=document.getElementById(buttonId);
+  const show=input.type==="password";
+  input.type=show?"text":"password";
+  btn.textContent=show?"🙈 Hide":"👁 Show";
 }
 async function signIn(){
   const email=document.getElementById("authEmail").value.trim();
@@ -153,14 +187,9 @@ async function signIn(){
   authMessage("Signing in…");
   try{
     const {data,error}=await db.auth.signInWithPassword({email,password});
-    if(error){authMessage(error.message);return}
-    currentUser=data.user;
-    showApp();
-    await initializeSync();
-  }catch(e){
-    console.error(e);
-    authMessage("Could not reach the cloud. Check your internet connection and try again.");
-  }
+    if(error){authMessage(friendlyError(error));return}
+    currentUser=data.user;recoveryMode=false;showApp();await initializeSync();startRealtime();
+  }catch(e){console.error(e);authMessage(friendlyError(e))}
 }
 async function signUp(){
   const email=document.getElementById("authEmail").value.trim();
@@ -170,244 +199,208 @@ async function signUp(){
   authMessage("Creating account…");
   try{
     const {data,error}=await db.auth.signUp({email,password});
-    if(error){authMessage(error.message);return}
-    if(data.session&&data.user){
-      currentUser=data.user;
-      showApp();
-      await initializeSync();
-    }else{
-      authMessage("Account created. Check your email for the confirmation link, then come back and sign in.");
-    }
-  }catch(e){
-    console.error(e);
-    authMessage("Could not reach the cloud. Check your internet connection and try again.");
-  }
+    if(error){authMessage(friendlyError(error));return}
+    if(data.session&&data.user){currentUser=data.user;recoveryMode=false;showApp();await initializeSync();startRealtime()}
+    else authMessage("Account created. Check your email for the confirmation link, then come back and sign in.");
+  }catch(e){console.error(e);authMessage(friendlyError(e))}
+}
+async function requestPasswordReset(){
+  const email=document.getElementById("authEmail").value.trim();
+  if(!email){authMessage("Enter your email address first.");return}
+  authMessage("Sending password reset email…");
+  try{
+    const redirectTo=location.origin+location.pathname;
+    const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo});
+    if(error){authMessage(friendlyError(error));return}
+    authMessage("Password reset email sent. Open the newest email and tap its reset link.");
+  }catch(e){authMessage(friendlyError(e))}
 }
 async function signOut(){
-  clearTimeout(syncTimer);
-  saveCurrent();
-  localSave();
-  await db.auth.signOut();
-  currentUser=null;
-  current=null;
-  notes=[];
+  clearTimeout(syncTimer);stopRealtime();saveCurrent();localSave();
+  try{await db.auth.signOut()}catch(e){console.error(e)}
+  currentUser=null;current=null;notes=[];recoveryMode=false;
+  document.getElementById("resetBox").classList.add("hidden");
   showAuth("Signed out.");
 }
 function persist(){
   localSave();
   if(!currentUser)return;
-  setSyncStatus("Saved locally");
+  setSyncStatus(navigator.onLine?"Saved locally — syncing…":"Offline — saved on this device");
   clearTimeout(syncTimer);
-  syncTimer=setTimeout(syncAllToCloud,600);
+  syncTimer=setTimeout(syncAllToCloud,500);
 }
-function cloudRow(n){
-  return {
-    id:n.id,
-    user_id:currentUser.id,
-    title:n.title||"",
-    body:n.body||"",
-    type:n.type==="check"?"check":"text",
-    items:Array.isArray(n.items)?n.items:[],
-    pinned:!!n.pinned,
-    trash:!!n.trash,
-    modified:Number.isFinite(Number(n.modified))?Number(n.modified):Date.now()
-  };
-}
-function noteFromRow(r){
-  return {
-    id:r.id,
-    title:r.title||"",
-    body:r.body||"",
-    type:r.type==="check"?"check":"text",
-    items:Array.isArray(r.items)?r.items:[],
-    pinned:!!r.pinned,
-    trash:!!r.trash,
-    modified:Number(r.modified||0)
-  };
-}
+function cloudRow(n){return{id:n.id,user_id:currentUser.id,title:n.title||"",body:n.body||"",type:n.type==="check"?"check":"text",items:Array.isArray(n.items)?n.items:[],pinned:!!n.pinned,trash:!!n.trash,modified:Number.isFinite(Number(n.modified))?Number(n.modified):Date.now()}}
+function noteFromRow(r){return{id:r.id,title:r.title||"",body:r.body||"",type:r.type==="check"?"check":"text",items:Array.isArray(r.items)?r.items:[],pinned:!!r.pinned,trash:!!r.trash,modified:Number(r.modified||0)}}
 async function syncAllToCloud(){
   if(!currentUser)return;
+  if(!navigator.onLine){setSyncStatus("Offline — saved on this device");return}
   try{
     setSyncStatus("Syncing…");
     if(notes.length){
-      const rows=notes.map(cloudRow);
-      const {error}=await db.from("notes").upsert(rows,{onConflict:"id"});
+      const {error}=await db.from("notes").upsert(notes.map(cloudRow),{onConflict:"id"});
       if(error)throw error;
     }
     setSyncStatus("Cloud synced");
-  }catch(e){
-    console.error("Cloud sync failed:",e);
-    setSyncStatus("Cloud sync failed — local copy kept");
-  }
+  }catch(e){console.error("Cloud sync failed:",e);setSyncStatus("Sync problem — local copy kept")}
 }
 async function deleteCloudNote(id){
   if(!currentUser)return;
+  if(!navigator.onLine){setSyncStatus("Offline — delete will need cloud connection");return}
   try{
     const {error}=await db.from("notes").delete().eq("id",id).eq("user_id",currentUser.id);
-    if(error)throw error;
-    setSyncStatus("Cloud synced");
-  }catch(e){
-    console.error("Cloud delete failed:",e);
-    setSyncStatus("Delete sync failed — local copy deleted");
-  }
+    if(error)throw error;setSyncStatus("Cloud synced");
+  }catch(e){console.error("Cloud delete failed:",e);setSyncStatus("Delete sync problem")}
 }
-function normalizeLegacy(list){
-  if(!Array.isArray(list))return [];
-  return list.filter(n=>n&&n.id).map(n=>({
-    id:n.id,
-    title:n.title||"",
-    body:n.body||"",
-    type:n.type==="check"?"check":"text",
-    items:Array.isArray(n.items)?n.items:[],
-    pinned:!!n.pinned,
-    trash:!!n.trash,
-    modified:Number(n.modified||Date.now())
-  }));
+function normalizeLegacy(list){if(!Array.isArray(list))return[];return list.filter(n=>n&&n.id).map(n=>({id:n.id,title:n.title||"",body:n.body||"",type:n.type==="check"?"check":"text",items:Array.isArray(n.items)?n.items:[],pinned:!!n.pinned,trash:!!n.trash,modified:Number(n.modified||Date.now())}))}
+function mergeNotes(local,cloud){
+  const merged=new Map();
+  for(const n of local)merged.set(n.id,n);
+  for(const c of cloud){const l=merged.get(c.id);if(!l||Number(c.modified||0)>=Number(l.modified||0))merged.set(c.id,c)}
+  return [...merged.values()];
 }
 async function initializeSync(){
   if(!currentUser)return;
-  loadUserLocal();
-  setSyncStatus("Loading cloud notes…");
-
-  let data,error;
+  loadUserLocal();setSyncStatus(navigator.onLine?"Loading cloud notes…":"Offline — using saved notes");
+  if(!navigator.onLine){render();return}
   try{
-    ({data,error}=await db.from("notes").select("*").eq("user_id",currentUser.id));
-  }catch(e){
-    console.error("Cloud load failed:",e);
-    setSyncStatus("Cloud unavailable — using saved local notes");
-    render();
-    return;
-  }
-  if(error){
-    console.error("Cloud load failed:",error);
-    setSyncStatus("Cloud unavailable — using saved local notes");
-    render();
-    return;
-  }
-
-  const cloud=(data||[]).map(noteFromRow);
-
-  // One-time migration: if this account and the cloud are both empty,
-  // bring forward notes made by the earlier local-only version.
-  if(!notes.length && !cloud.length){
-    const legacy=normalizeLegacy(safeParse(localStorage.getItem(LEGACY_KEY),[]));
-    if(legacy.length){
-      notes=legacy;
-      localSave();
-      await syncAllToCloud();
-      localStorage.setItem(LEGACY_KEY+"_migrated","yes");
-      render();
-      return;
+    const {data,error}=await db.from("notes").select("*").eq("user_id",currentUser.id);
+    if(error)throw error;
+    const cloud=(data||[]).map(noteFromRow);
+    if(!notes.length&&!cloud.length){
+      const legacy=normalizeLegacy(safeParse(localStorage.getItem(LEGACY_KEY),[]));
+      if(legacy.length){notes=legacy;localSave();await syncAllToCloud();localStorage.setItem(LEGACY_KEY+"_migrated","yes");render();return}
     }
-  }
-
-  // Merge this user's local copy with this user's cloud copy by note ID,
-  // keeping whichever version has the newer modified timestamp.
-  const merged=new Map();
-  for(const n of notes)merged.set(n.id,n);
-  for(const c of cloud){
-    const l=merged.get(c.id);
-    if(!l || Number(c.modified||0)>=Number(l.modified||0))merged.set(c.id,c);
-  }
-  notes=[...merged.values()];
-  localSave();
-  render();
-  await syncAllToCloud();
+    notes=mergeNotes(notes,cloud);localSave();render();await syncAllToCloud();
+  }catch(e){console.error("Cloud load failed:",e);setSyncStatus("Cloud unavailable — using saved local notes");render()}
 }
-function esc(s){return (s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+async function refreshFromCloud(){
+  if(!currentUser||!navigator.onLine)return;
+  try{
+    const {data,error}=await db.from("notes").select("*").eq("user_id",currentUser.id);
+    if(error)throw error;
+    notes=mergeNotes(notes,(data||[]).map(noteFromRow));localSave();render();
+    if(current&&document.getElementById("editorScreen")&&!document.getElementById("editorScreen").classList.contains("hidden")){
+      const updated=notes.find(n=>n.id===current.id);if(updated)current=updated;
+    }
+    setSyncStatus("Cloud synced");
+  }catch(e){console.error("Realtime refresh failed:",e)}
+}
+function startRealtime(){
+  stopRealtime();
+  if(!currentUser||!db.channel)return;
+  try{
+    realtimeChannel=db.channel("notes-"+currentUser.id)
+      .on("postgres_changes",{event:"*",schema:"public",table:"notes",filter:"user_id=eq."+currentUser.id},()=>{
+        const now=Date.now();if(now-lastRealtimeRefresh<300)return;lastRealtimeRefresh=now;refreshFromCloud();
+      }).subscribe();
+  }catch(e){console.warn("Realtime unavailable:",e)}
+}
+function stopRealtime(){if(realtimeChannel){try{db.removeChannel(realtimeChannel)}catch{}realtimeChannel=null}}
+function esc(s){return(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function screens(id){["notesScreen","editorScreen","voiceScreen","moreScreen"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id))}
 function showNotes(){saveCurrent();screens("notesScreen");render()}
-function render(){let q=document.getElementById("search").value.toLowerCase();let a=notes.filter(n=>!n.trash&&(!pinnedOnly||n.pinned)&&((n.title+" "+n.body+" "+(n.items||[]).map(i=>i.t).join(" ")).toLowerCase().includes(q))).sort((a,b)=>(b.pinned-a.pinned)||(b.modified-a.modified));let el=document.getElementById("notes");el.innerHTML=a.length?a.map(n=>`<div class="card" onclick="openNote('${n.id}')"><h3>${n.pinned?"📌 ":""}${esc(n.title||"Untitled")}</h3><div class="preview">${n.type==="check"?(n.items.filter(i=>!i.done).length+" items left"):esc((n.body||"").slice(0,110))}</div><div class="meta">${new Date(n.modified).toLocaleString()}</div></div>`).join(""):`<div class="empty">No notes found.</div>`}
-document.getElementById("search").addEventListener("input",render)
-function newNote(){let n={id:crypto.randomUUID(),title:"",body:"",type:"text",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);persist();openNote(n.id)}
-function newChecklist(){let n={id:crypto.randomUUID(),title:"New Checklist",body:"",type:"check",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);persist();openNote(n.id)}
-function openNote(id){saveCurrent();current=notes.find(n=>n.id===id);screens("editorScreen");document.getElementById("noteTitle").value=current.title;document.getElementById("noteBody").value=current.body||"";document.getElementById("textEditor").classList.toggle("hidden",current.type!=="text");document.getElementById("checkEditor").classList.toggle("hidden",current.type!=="check");document.getElementById("pinBtn").textContent=current.pinned?"📌 Pinned":"📌 Pin";renderChecks()}
+function render(){
+  const q=document.getElementById("search").value.toLowerCase();
+  const a=notes.filter(n=>!n.trash&&(!pinnedOnly||n.pinned)&&((n.title+" "+n.body+" "+(n.items||[]).map(i=>i.t).join(" ")).toLowerCase().includes(q))).sort((a,b)=>(b.pinned-a.pinned)||(b.modified-a.modified));
+  document.getElementById("pinnedBtn").textContent=pinnedOnly?"📌 Showing Pinned":"📌 Pinned";
+  const el=document.getElementById("notes");
+  el.innerHTML=a.length?a.map(n=>`<div class="card" onclick="openNote('${n.id}')"><h3>${n.pinned?"📌 ":""}${esc(n.title||"Untitled")}</h3><div class="preview">${n.type==="check"?(n.items.filter(i=>!i.done).length+" items left"):esc((n.body||"").slice(0,110))}</div><div class="meta">${new Date(n.modified).toLocaleString()}</div></div>`).join(""):`<div class="empty">No notes found.</div>`;
+}
+document.getElementById("search").addEventListener("input",render);
+function newNote(){const n={id:crypto.randomUUID(),title:"",body:"",type:"text",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);persist();openNote(n.id)}
+function newChecklist(){const n={id:crypto.randomUUID(),title:"New Checklist",body:"",type:"check",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);persist();openNote(n.id)}
+function openNote(id){saveCurrent();current=notes.find(n=>n.id===id);if(!current)return;screens("editorScreen");document.getElementById("noteTitle").value=current.title;document.getElementById("noteBody").value=current.body||"";document.getElementById("textEditor").classList.toggle("hidden",current.type!=="text");document.getElementById("checkEditor").classList.toggle("hidden",current.type!=="check");document.getElementById("pinBtn").textContent=current.pinned?"📌 Pinned":"📌 Pin";document.getElementById("savedMsg").textContent="Autosaves as you type.";renderChecks()}
 function saveCurrent(){if(!current)return;current.title=document.getElementById("noteTitle").value;current.body=document.getElementById("noteBody").value;current.modified=Date.now();persist()}
-["noteTitle","noteBody"].forEach(id=>document.getElementById(id).addEventListener("input",()=>{saveCurrent();document.getElementById("savedMsg").textContent="Saved "+new Date().toLocaleTimeString()}))
+["noteTitle","noteBody"].forEach(id=>document.getElementById(id).addEventListener("input",()=>{saveCurrent();document.getElementById("savedMsg").textContent="Saved "+new Date().toLocaleTimeString()}));
 function saveAndHome(){showNotes();current=null}
-function togglePin(){current.pinned=!current.pinned;current.modified=Date.now();persist();document.getElementById("pinBtn").textContent=current.pinned?"📌 Pinned":"📌 Pin"}
-function trashCurrent(){if(confirm("Move this note to Trash?")){current.trash=true;current.modified=Date.now();persist();current=null;showNotes()}}
+function togglePin(){if(!current)return;current.pinned=!current.pinned;current.modified=Date.now();persist();document.getElementById("pinBtn").textContent=current.pinned?"📌 Pinned":"📌 Pin"}
+function trashCurrent(){if(current&&confirm("Move this note to Trash?")){current.trash=true;current.modified=Date.now();persist();current=null;showNotes()}}
 function renderChecks(){if(!current||current.type!=="check")return;document.getElementById("checkItems").innerHTML=current.items.map((i,x)=>`<div class="checkitem"><input type="checkbox" ${i.done?"checked":""} onchange="toggleItem(${x})"><span style="${i.done?"text-decoration:line-through;opacity:.55":""}">${esc(i.t)}</span><button class="secondary" onclick="delItem(${x})">×</button></div>`).join("")}
-function addChecklistItem(){let v=document.getElementById("newItem").value.trim();if(!v)return;current.items.push({t:v,done:false});document.getElementById("newItem").value="";current.modified=Date.now();persist();renderChecks()}
+function addChecklistItem(){const v=document.getElementById("newItem").value.trim();if(!v||!current)return;current.items.push({t:v,done:false});document.getElementById("newItem").value="";current.modified=Date.now();persist();renderChecks()}
 function toggleItem(i){current.items[i].done=!current.items[i].done;current.modified=Date.now();persist();renderChecks()}
 function delItem(i){current.items.splice(i,1);current.modified=Date.now();persist();renderChecks()}
 function openGrocery(){let n=notes.find(n=>!n.trash&&n.title.toLowerCase()==="grocery list");if(!n){n={id:crypto.randomUUID(),title:"Grocery List",body:"",type:"check",items:[],pinned:true,trash:false,modified:Date.now()};notes.push(n);persist()}openNote(n.id)}
 function filterPinned(){pinnedOnly=!pinnedOnly;render()}
 function showVoice(){saveCurrent();screens("voiceScreen")}
-function command(c){let s=c.trim();document.getElementById("voiceStatus").textContent="Heard: “"+s+"”";let m=s.match(/^add (.+?) to (?:my |the )?grocery list[.!]?$/i);if(m){let item=m[1].replace(/^a |^an /i,"");let g=notes.find(n=>!n.trash&&n.title.toLowerCase()==="grocery list");if(!g){g={id:crypto.randomUUID(),title:"Grocery List",type:"check",items:[],body:"",pinned:true,trash:false,modified:Date.now()};notes.push(g)}g.items.push({t:item.charAt(0).toUpperCase()+item.slice(1),done:false});g.modified=Date.now();persist();document.getElementById("voiceStatus").textContent="✓ Added “"+item+"” to Grocery List.";return}
-m=s.match(/^create (?:a )?(?:new )?note called (.+)$/i);if(m){notes.push({id:crypto.randomUUID(),title:m[1],body:"",type:"text",items:[],pinned:false,trash:false,modified:Date.now()});persist();document.getElementById("voiceStatus").textContent="✓ Created note “"+m[1]+"”.";return}
-m=s.match(/^add (?:a )?to-do[: ]+(.+)$/i);if(m){let n=notes.find(n=>!n.trash&&n.title==="To Do")||{id:crypto.randomUUID(),title:"To Do",body:"",type:"check",items:[],pinned:true,trash:false,modified:Date.now()};if(!notes.includes(n))notes.push(n);n.items.push({t:m[1],done:false});n.modified=Date.now();persist();document.getElementById("voiceStatus").textContent="✓ Added to To Do.";return}
-m=s.match(/find (?:my )?note about (.+)/i);if(m){let q=m[1].toLowerCase(),n=notes.find(n=>!n.trash&&(n.title+" "+n.body).toLowerCase().includes(q));if(n){openNote(n.id)}else document.getElementById("voiceStatus").textContent="I couldn't find a matching note.";return}
-document.getElementById("voiceStatus").textContent="I’m not sure what that means. Try one of the examples below."}
+function command(c){
+  const s=c.trim();if(!s){document.getElementById("voiceStatus").textContent="Say or type a command first.";return}
+  document.getElementById("voiceStatus").textContent="Heard: “"+s+"”";
+  let m=s.match(/^add (.+?) to (?:my |the )?grocery list[.!]?$/i);
+  if(m){let item=m[1].replace(/^a |^an /i,"");let g=notes.find(n=>!n.trash&&n.title.toLowerCase()==="grocery list");if(!g){g={id:crypto.randomUUID(),title:"Grocery List",type:"check",items:[],body:"",pinned:true,trash:false,modified:Date.now()};notes.push(g)}g.items.push({t:item.charAt(0).toUpperCase()+item.slice(1),done:false});g.modified=Date.now();persist();document.getElementById("voiceStatus").textContent="✓ Added “"+item+"” to Grocery List.";return}
+  m=s.match(/^create (?:a )?(?:new )?note called (.+)$/i);if(m){notes.push({id:crypto.randomUUID(),title:m[1],body:"",type:"text",items:[],pinned:false,trash:false,modified:Date.now()});persist();document.getElementById("voiceStatus").textContent="✓ Created note “"+m[1]+"”.";return}
+  m=s.match(/^add (?:a )?to-do[: ]+(.+)$/i);if(m){let n=notes.find(n=>!n.trash&&n.title==="To Do")||{id:crypto.randomUUID(),title:"To Do",body:"",type:"check",items:[],pinned:true,trash:false,modified:Date.now()};if(!notes.includes(n))notes.push(n);n.items.push({t:m[1],done:false});n.modified=Date.now();persist();document.getElementById("voiceStatus").textContent="✓ Added to To Do.";return}
+  m=s.match(/find (?:my )?note about (.+)/i);if(m){const q=m[1].toLowerCase(),n=notes.find(n=>!n.trash&&(n.title+" "+n.body).toLowerCase().includes(q));if(n)openNote(n.id);else document.getElementById("voiceStatus").textContent="I couldn't find a matching note.";return}
+  document.getElementById("voiceStatus").textContent="I’m not sure what that means. Try one of the examples below.";
+}
 function runTypedCommand(){command(document.getElementById("commandText").value)}
-function listen(){let SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){document.getElementById("voiceStatus").textContent="Voice recognition isn't available in this browser. Type the command below instead.";return}let r=new SR();r.lang="en-US";r.interimResults=false;r.onstart=()=>document.getElementById("voiceStatus").textContent="Listening…";r.onerror=e=>document.getElementById("voiceStatus").textContent="Voice error: "+e.error;r.onresult=e=>command(e.results[0][0].transcript);r.start()}
+function listen(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){document.getElementById("voiceStatus").textContent="Voice recognition isn't available in this browser. Type the command below instead.";return}
+  try{
+    const r=new SR();r.lang="en-US";r.interimResults=false;r.maxAlternatives=1;
+    r.onstart=()=>document.getElementById("voiceStatus").textContent="Listening…";
+    r.onerror=e=>document.getElementById("voiceStatus").textContent=e.error==="not-allowed"?"Microphone permission is off. Allow microphone access for this site and try again.":"Voice error: "+e.error;
+    r.onresult=e=>command(e.results[0][0].transcript);r.start();
+  }catch(e){document.getElementById("voiceStatus").textContent="Voice recognition could not start. You can type the command below."}
+}
 function showMore(){saveCurrent();screens("moreScreen");renderTrash()}
-function renderTrash(){let a=notes.filter(n=>n.trash);document.getElementById("trash").innerHTML=a.length?a.map(n=>`<div class="row"><span style="flex:1">${esc(n.title||"Untitled")}</span><button class="secondary" onclick="restore('${n.id}')">Restore</button><button class="danger" onclick="purge('${n.id}')">Delete</button></div>`).join(""):"Trash is empty."}
-function restore(id){let n=notes.find(n=>n.id===id);n.trash=false;n.modified=Date.now();persist();renderTrash()}
-async function purge(id){if(confirm("Delete permanently?")){notes=notes.filter(n=>n.id!==id);localSave();await deleteCloudNote(id);renderTrash();render()}}
+function renderTrash(){const a=notes.filter(n=>n.trash);document.getElementById("trash").innerHTML=a.length?a.map(n=>`<div class="row"><span style="flex:1">${esc(n.title||"Untitled")}</span><button class="secondary" onclick="restore('${n.id}')">Restore</button><button class="danger" onclick="purge('${n.id}')">Delete</button></div>`).join(""):"Trash is empty."}
+function restore(id){const n=notes.find(n=>n.id===id);if(!n)return;n.trash=false;n.modified=Date.now();persist();renderTrash()}
+async function purge(id){if(confirm("Delete permanently? This cannot be undone.")){notes=notes.filter(n=>n.id!==id);localSave();await deleteCloudNote(id);renderTrash();render()}}
 function setFont(v){document.body.className=v;localStorage.setItem("ocn_font",v)}
 document.getElementById("fontSize").value=localStorage.getItem("ocn_font")||"";
 setFont(localStorage.getItem("ocn_font")||"");
-document.getElementById("authPassword").addEventListener("keydown",e=>{
-  if(e.key==="Enter")signIn();
-});
+document.getElementById("authPassword").addEventListener("keydown",e=>{if(e.key==="Enter")signIn()});
+document.getElementById("newPassword").addEventListener("keydown",e=>{if(e.key==="Enter")updatePassword()});
+document.getElementById("newItem").addEventListener("keydown",e=>{if(e.key==="Enter")addChecklistItem()});
 
 async function updatePassword(){
   const password=document.getElementById("newPassword").value;
-  if(!password){
-    document.getElementById("authMsg").textContent="Please enter a new password.";
-    return;
-  }
-  const {error}=await db.auth.updateUser({password});
-  if(error){
-    document.getElementById("authMsg").textContent=error.message;
-    return;
-  }
-  document.getElementById("authMsg").textContent="Password changed successfully.";
-  document.getElementById("resetBox").classList.add("hidden");
-  showApp();
-  await initializeSync();
-}
-  async function boot(){
+  if(password.length<8){authMessage("Use a password with at least 8 characters.");return}
   try{
-    const {data,error}=await db.auth.getSession();
-    if(error)throw error;
+    authMessage("Changing password…");
+    const {error}=await db.auth.updateUser({password});
+    if(error){authMessage(friendlyError(error));return}
+    recoveryMode=false;document.getElementById("resetBox").classList.add("hidden");
+    authMessage("");showApp();await initializeSync();startRealtime();
+  }catch(e){authMessage(friendlyError(e))}
+}
+function enterRecovery(session){
+  recoveryMode=true;currentUser=session?.user||currentUser;
+  showAuth("Enter your new password below.");
+  document.getElementById("resetBox").classList.remove("hidden");
+  setTimeout(()=>document.getElementById("newPassword").focus(),50);
+}
+async function boot(){
+  try{
+    const {data,error}=await db.auth.getSession();if(error)throw error;
     const session=data?.session;
-    if(session?.user){
-      currentUser=session.user;
-      showApp();
-      await initializeSync();
-    }else{
-      showAuth();
-    }
-  }catch(e){
-    console.error("Startup failed:",e);
-    showAuth("Could not connect to the cloud. Check your internet connection and reload the page.");
-  }finally{
-    booting=false;
-  }
+    if(session?.user){currentUser=session.user;if(!recoveryMode){showApp();await initializeSync();startRealtime()}}
+    else showAuth();
+  }catch(e){console.error("Startup failed:",e);showAuth(friendlyError(e,"Could not connect to the cloud."))}
+  finally{booting=false}
 }
 db.auth.onAuthStateChange((event,session)=>{
-  
-
-  if(event==="PASSWORD_RECOVERY"){
-    currentUser=session?.user || null;
-    showAuth("Enter your new password below.");
-    document.getElementById("resetBox").classList.remove("hidden");
-    return;
-  }
+  if(event==="PASSWORD_RECOVERY"){enterRecovery(session);return}
   if(booting)return;
-  if(event==="SIGNED_OUT" || !session){
-    currentUser=null;
-    current=null;
-    notes=[];
-    showAuth(event==="SIGNED_OUT"?"Signed out.":"");
-  }
+  if(event==="SIGNED_OUT"||!session){stopRealtime();currentUser=null;current=null;notes=[];recoveryMode=false;showAuth(event==="SIGNED_OUT"?"Signed out.":"");return}
+  if(event==="SIGNED_IN"&&session?.user&&!recoveryMode){currentUser=session.user;showApp();startRealtime()}
 });
+
+window.addEventListener("online",async()=>{setSyncStatus("Back online — syncing…");await syncAllToCloud();await refreshFromCloud()});
+window.addEventListener("offline",()=>setSyncStatus("Offline — saved on this device"));
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&currentUser&&!recoveryMode)refreshFromCloud()});
+
 boot();
 
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js").catch(()=>{}));
+if("serviceWorker" in navigator){
+  window.addEventListener("load",async()=>{
+    try{
+      const reg=await navigator.serviceWorker.register("./service-worker.js");
+      reg.update().catch(()=>{});
+    }catch(e){console.warn("Service worker registration failed",e)}
+  });
 }
 </script>
-</body></html>
+</body>
+</html>
