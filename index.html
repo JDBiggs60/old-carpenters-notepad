@@ -49,11 +49,18 @@ body.large{font-size:19px} body.xlarge{font-size:22px}
     <p>Sign in to keep your notes synced between devices.</p>
     <input id="authEmail" type="email" autocomplete="email" placeholder="Email address">
     <div style="height:10px"></div>
-    <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password">
+   <div style="display:flex;gap:8px">
+  <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password">
+  <button type="button" class="secondary" onclick="togglePassword()">👁 Show</button>
+</div>
     <div class="row">
       <button onclick="signIn()">Sign In</button>
       <button class="secondary" onclick="signUp()">Create Account</button>
     </div>
+<div id="resetBox" class="hidden">
+  <input id="newPassword" type="password" placeholder="Enter new password">
+  <button type="button" onclick="updatePassword()">Set New Password</button>
+</div>
     <div id="authMsg" class="authmsg"></div>
   </div>
 </div>
@@ -345,7 +352,23 @@ document.getElementById("authPassword").addEventListener("keydown",e=>{
   if(e.key==="Enter")signIn();
 });
 
-async function boot(){
+async function updatePassword(){
+  const password=document.getElementById("newPassword").value;
+  if(!password){
+    document.getElementById("authMsg").textContent="Please enter a new password.";
+    return;
+  }
+  const {error}=await db.auth.updateUser({password});
+  if(error){
+    document.getElementById("authMsg").textContent=error.message;
+    return;
+  }
+  document.getElementById("authMsg").textContent="Password changed successfully.";
+  document.getElementById("resetBox").classList.add("hidden");
+  showApp();
+  await initializeSync();
+}
+  async function boot(){
   try{
     const {data,error}=await db.auth.getSession();
     if(error)throw error;
@@ -365,7 +388,15 @@ async function boot(){
   }
 }
 db.auth.onAuthStateChange((event,session)=>{
+  
   if(booting)return;
+  if(event==="PASSWORD_RECOVERY"){
+    currentUser=session?.user || null;
+    showAuth("Enter your new password below.");
+    document.getElementById("resetBox").classList.remove("hidden");
+    return;
+  }
+  
   if(event==="SIGNED_OUT" || !session){
     currentUser=null;
     current=null;
