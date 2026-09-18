@@ -389,14 +389,14 @@ async function updatePassword(){
 }
 db.auth.onAuthStateChange((event,session)=>{
   
-  if(booting)return;
+
   if(event==="PASSWORD_RECOVERY"){
     currentUser=session?.user || null;
     showAuth("Enter your new password below.");
     document.getElementById("resetBox").classList.remove("hidden");
     return;
   }
-  
+  if(booting)return;
   if(event==="SIGNED_OUT" || !session){
     currentUser=null;
     current=null;
