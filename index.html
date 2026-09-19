@@ -146,7 +146,7 @@ body.xlarge{font-size:22px}
 <section id="moreScreen" class="screen hidden">
 <div class="card"><h3>Settings</h3><label>Text size</label><select id="fontSize" onchange="setFont(this.value)"><option value="">Normal</option><option value="large">Large</option><option value="xlarge">Extra Large</option></select></div>
 <div class="card"><h3>Trash</h3><div id="trash"></div></div>
-<div class="card help"><h3>About</h3><b>Old Carpenter's Notepad</b><br>Simple notes. No nonsense.<br><br><b>Version 1.1</b><br><br>Your notes are saved automatically on this device and synchronized to your private cloud account.</div>
+<div class="card help"><h3>About</h3><b>Old Carpenter's Notepad</b><br>Simple notes. No nonsense.<br><br><b>Version 1.1.1</b><br><br>Your notes are saved automatically on this device and synchronized to your private cloud account.</div>
 </section>
 
 <nav>
@@ -346,7 +346,13 @@ const STARTER_GROCERIES=[
 function groceryNote(){
  let g=notes.find(n=>!n.trash&&n.title==="Grocery List");
  if(!g){g={id:crypto.randomUUID(),title:"Grocery List",body:"",type:"check",items:STARTER_GROCERIES.map(([t,category])=>({t,category,needed:false,done:false})),pinned:true,trash:false,modified:Date.now()};notes.push(g);persist()}
- else{g.type="check";g.items=(g.items||[]).map(i=>({t:i.t,category:i.category||"Other",needed:typeof i.needed==="boolean"?i.needed:!i.done,done:!!i.done}));if(!g.items.length){g.items=STARTER_GROCERIES.map(([t,category])=>({t,category,needed:false,done:false}));g.modified=Date.now();persist()}}
+ else{
+ g.type="check";
+ g.items=(g.items||[]).map(i=>({t:i.t,category:i.category||"Other",needed:typeof i.needed==="boolean"?i.needed:!i.done,done:!!i.done}));
+ let changed=false;
+ STARTER_GROCERIES.forEach(([t,category])=>{if(!g.items.some(i=>i.t.trim().toLowerCase()===t.toLowerCase())){g.items.push({t,category,needed:false,done:false});changed=true}});
+ if(changed){g.modified=Date.now();persist()}
+}
  return g;
 }
 function openGrocery(){saveCurrent();screens("groceryScreen");renderGrocery()}
@@ -363,10 +369,15 @@ function addMasterGrocery(){const el=document.getElementById("newGroceryItem"),t
 function removeMasterGrocery(i){const g=groceryNote(),item=g.items[i];if(confirm(`Remove "${item.t}" from the permanent grocery list?`)){g.items.splice(i,1);g.modified=Date.now();persist();renderGrocery()}}
 function ideasNote(){let n=notes.find(n=>!n.trash&&n.title==="__IDEAS__");if(!n){n={id:crypto.randomUUID(),title:"__IDEAS__",body:"",type:"check",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);persist()}return n}
 function showIdeas(){saveCurrent();screens("ideasScreen");renderIdeas()}
-function renderIdeas(){const n=ideasNote();document.getElementById("ideasList").innerHTML=n.items.length?n.items.slice().reverse().map((i,r)=>{const idx=n.items.length-1-r;return `<div class="idea-item"><div class="idea-text">${esc(i.t)}<div class="idea-time">${new Date(i.created||n.modified).toLocaleString()}</div></div><button class="secondary smallbtn" onclick="ideaToNote(${idx})">To Note</button><button class="danger smallbtn" onclick="deleteIdea(${idx})">×</button></div>`}).join(""):`<div class="empty" style="padding:24px">No ideas yet.</div>`}
+function renderIdeas(){const n=ideasNote();document.getElementById("ideasList").innerHTML=n.items.length?n.items.slice().reverse().map((i,r)=>{const idx=n.items.length-1-r;return `<div class="idea-item"><div class="idea-text">${esc(i.t)}<div class="idea-time">${new Date(i.created||n.modified).toLocaleString()}</div></div><button class="secondary smallbtn" onclick="ideaToNote(${idx})">Make Note</button><button class="danger smallbtn" onclick="deleteIdea(${idx})">×</button></div>`}).join(""):`<div class="empty" style="padding:24px">No ideas yet.</div>`}
 function addIdea(){const el=document.getElementById("newIdea"),t=el.value.trim();if(!t)return;const n=ideasNote();n.items.push({t,created:Date.now(),done:false});n.modified=Date.now();el.value="";persist();renderIdeas()}
 function deleteIdea(i){const n=ideasNote();if(confirm("Delete this idea?")){n.items.splice(i,1);n.modified=Date.now();persist();renderIdeas()}}
-function ideaToNote(i){const a=ideasNote(),idea=a.items[i];if(!idea)return;const n={id:crypto.randomUUID(),title:"Idea",body:idea.t,type:"text",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);a.items.splice(i,1);a.modified=Date.now();persist();openNote(n.id)}
+function ideaToNote(i){
+ const a=ideasNote(),idea=a.items[i];if(!idea)return;
+ if(!confirm("Turn this idea into a regular note?"))return;
+ const n={id:crypto.randomUUID(),title:"Idea",body:idea.t,type:"text",items:[],pinned:false,trash:false,modified:Date.now()};
+ notes.push(n);a.items.splice(i,1);a.modified=Date.now();persist();openNote(n.id)
+}
 function filterPinned(){pinnedOnly=!pinnedOnly;render()}
 function showVoice(){saveCurrent();screens("voiceScreen")}
 function command(c){
@@ -453,3 +464,4 @@ if("serviceWorker" in navigator){
 </script>
 </body>
 </html>
+
