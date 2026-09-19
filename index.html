@@ -67,9 +67,15 @@ body.xlarge{font-size:22px}
 .idea-topic-btn{flex:1;text-align:left;border:0;background:transparent;color:inherit;padding:8px;display:flex;flex-direction:column;gap:4px}.idea-topic-btn span{font-size:12px;opacity:.65;font-weight:400}
 .photo-thumb{width:58px;height:58px;object-fit:cover;border-radius:10px;border:1px solid #c9b979;background:#fff;flex:0 0 auto;cursor:pointer}
 .photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
-.photo-card{position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:#eee1a7;border:1px solid #c9b979}
-.photo-card img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer}
+.photo-card{position:relative;border-radius:12px;overflow:hidden;background:#fff8d5;border:1px solid #c9b979}
+.photo-card img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;cursor:pointer}
 .photo-card button{position:absolute;top:5px;right:5px;padding:5px 8px;border-radius:9px;background:#9f3f35}
+.photo-caption{border:0;border-top:1px solid #d7c77b;border-radius:0;background:#fffdf2;padding:9px 8px;font-size:12px}
+.idea-section-title{font-weight:800;color:#4b2d1b;margin:16px 0 7px}
+.idea-description{min-height:120px}
+.idea-check-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #d7c77b}
+.idea-check-item input[type=checkbox]{width:24px;height:24px;flex:0 0 auto}
+.idea-check-item span{flex:1}
 .photo-placeholder{width:58px;height:58px;border-radius:10px;border:1px dashed #bcae76;display:flex;align-items:center;justify-content:center;background:#fff8d5;flex:0 0 auto;font-size:23px;opacity:.7}
 .photo-note{font-size:12px;opacity:.7;align-self:center}
 .photo-modal{position:fixed;z-index:50;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;padding:18px}
@@ -158,11 +164,23 @@ body.xlarge{font-size:22px}
 <div id="ideasList"></div></div></section>
 <section id="ideaDetailScreen" class="screen hidden">
 <div class="card"><div class="row"><button class="secondary" onclick="showIdeas()">← Ideas</button></div>
-<h3 id="ideaDetailTitle">💡 Idea</h3><div class="notice">Add as many related thoughts as you want. They stay together under this idea.</div>
-<div class="row"><input id="newIdeaThought" placeholder="Add another thought…"><button onclick="addIdeaThought()">Add</button></div>
+<h3 id="ideaDetailTitle">💡 Idea</h3><div class="notice">Use this as a small project folder for notes, tasks, and reference pictures.</div>
+
+<div class="idea-section-title">Project Description</div>
+<textarea id="ideaDescription" class="idea-description" placeholder="Describe the idea, dimensions, materials, plans, or anything important…"></textarea>
+<div id="ideaDescriptionStatus" class="meta">Autosaves as you type.</div>
+
+<div class="idea-section-title">Checklist</div>
+<div class="row"><input id="newIdeaTask" placeholder="Add a task…"><button onclick="addIdeaTask()">Add</button></div>
+<div id="ideaChecklist"></div>
+
+<div class="idea-section-title">Pictures</div>
 <div class="row"><button class="secondary" onclick="pickIdeaPhoto()">📷 Add Picture</button><span id="ideaPhotoStatus" class="photo-note"></span></div>
 <input id="ideaPhotoInput" class="hidden" type="file" accept="image/*" onchange="handleIdeaPhoto(event)">
 <div id="ideaPhotos" class="photo-grid"></div>
+
+<div class="idea-section-title">Thoughts</div>
+<div class="row"><input id="newIdeaThought" placeholder="Add another thought…"><button onclick="addIdeaThought()">Add</button></div>
 <div id="ideaThoughts"></div></div></section>
 <section id="moreScreen" class="screen hidden">
 <div class="card"><h3>Settings</h3><label>Text size</label><select id="fontSize" onchange="setFont(this.value)"><option value="">Normal</option><option value="large">Large</option><option value="xlarge">Extra Large</option></select></div>
@@ -449,21 +467,34 @@ let currentIdeaTopicId=null;
 function ideasNote(){
  let n=notes.find(n=>!n.trash&&n.title==="__IDEAS__");
  if(!n){n={id:crypto.randomUUID(),title:"__IDEAS__",body:"",type:"check",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);persist()}
- n.items=(n.items||[]).map(i=>i.thoughts?{...i,photos:Array.isArray(i.photos)?i.photos:[]}:{id:crypto.randomUUID(),title:i.t||"Untitled Idea",created:i.created||Date.now(),thoughts:[],photos:[]});
+ n.items=(n.items||[]).map(i=>{
+   if(!i.thoughts)return{id:crypto.randomUUID(),title:i.t||"Untitled Idea",created:i.created||Date.now(),description:"",thoughts:[],checklist:[],photos:[]};
+   return{...i,description:i.description||"",thoughts:Array.isArray(i.thoughts)?i.thoughts:[],checklist:Array.isArray(i.checklist)?i.checklist.map(x=>({t:x.t||"",done:!!x.done,created:x.created||Date.now()})):[],photos:Array.isArray(i.photos)?i.photos.map(p=>typeof p==="string"?{path:p,created:Date.now(),caption:""}:{...p,caption:p.caption||""}):[]};
+ });
  return n;
 }
 function showIdeas(){saveCurrent();currentIdeaTopicId=null;screens("ideasScreen");renderIdeas()}
-function renderIdeas(){const n=ideasNote(),q=(document.getElementById("ideaSearch")?.value||"").trim().toLowerCase(),topics=n.items.filter(i=>(i.title+" "+(i.thoughts||[]).map(t=>t.t).join(" ")).toLowerCase().includes(q));document.getElementById("ideasList").innerHTML=topics.length?topics.slice().reverse().map(i=>`<div class="idea-item"><button class="idea-topic-btn" onclick="openIdeaTopic('${i.id}')"><b>${esc(i.title)}</b><span>${(i.thoughts||[]).length} thought${(i.thoughts||[]).length===1?"":"s"} • ${(i.photos||[]).length} picture${(i.photos||[]).length===1?"":"s"}</span></button><button class="danger smallbtn" onclick="deleteIdeaTopic('${i.id}')">×</button></div>`).join(""):`<div class="empty" style="padding:24px">${q?"No matching ideas.":"No ideas yet."}</div>`}
-function addIdeaTopic(){const el=document.getElementById("newIdeaTopic"),title=el.value.trim();if(!title)return;const n=ideasNote(),topic={id:crypto.randomUUID(),title,created:Date.now(),thoughts:[],photos:[]};n.items.push(topic);n.modified=Date.now();el.value="";persist();openIdeaTopic(topic.id)}
-function openIdeaTopic(id){const n=ideasNote(),topic=n.items.find(i=>i.id===id);if(!topic)return;currentIdeaTopicId=id;screens("ideaDetailScreen");document.getElementById("ideaDetailTitle").textContent="💡 "+topic.title;document.getElementById("ideaPhotoStatus").textContent="";renderIdeaThoughts()}
-function renderIdeaThoughts(){const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;const thoughts=topic.thoughts||[];document.getElementById("ideaThoughts").innerHTML=thoughts.length?thoughts.slice().reverse().map((t,r)=>{const idx=thoughts.length-1-r;return `<div class="idea-item"><div class="idea-text">${esc(t.t)}<div class="idea-time">${new Date(t.created).toLocaleString()}</div></div><button class="danger smallbtn" onclick="deleteIdeaThought(${idx})">×</button></div>`}).join(""):`<div class="empty" style="padding:24px">No thoughts yet. Add the first one above.</div>`;renderIdeaPhotos()}
-function renderIdeaPhotos(){const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;const photos=topic.photos||[],el=document.getElementById("ideaPhotos");el.innerHTML=photos.map((p,idx)=>`<div class="photo-card"><img data-photo-path="${esc(p.path)}" alt="Idea picture" onclick="showPhotoModal(this.src)"><button class="danger smallbtn" onclick="deleteIdeaPhoto(${idx});event.stopPropagation()">×</button></div>`).join("");hydratePhotoUrls(el)}
+function renderIdeas(){
+ const n=ideasNote(),q=(document.getElementById("ideaSearch")?.value||"").trim().toLowerCase();
+ const topics=n.items.filter(i=>(i.title+" "+(i.description||"")+" "+(i.thoughts||[]).map(t=>t.t).join(" ")+" "+(i.checklist||[]).map(t=>t.t).join(" ")+" "+(i.photos||[]).map(p=>p.caption||"").join(" ")).toLowerCase().includes(q));
+ document.getElementById("ideasList").innerHTML=topics.length?topics.slice().reverse().map(i=>`<div class="idea-item"><button class="idea-topic-btn" onclick="openIdeaTopic('${i.id}')"><b>${esc(i.title)}</b><span>${(i.thoughts||[]).length} thought${(i.thoughts||[]).length===1?"":"s"} • ${(i.photos||[]).length} picture${(i.photos||[]).length===1?"":"s"} • ${(i.checklist||[]).length} task${(i.checklist||[]).length===1?"":"s"}</span></button><button class="danger smallbtn" onclick="deleteIdeaTopic('${i.id}')">×</button></div>`).join(""):`<div class="empty" style="padding:24px">${q?"No matching ideas.":"No ideas yet."}</div>`
+}
+function addIdeaTopic(){const el=document.getElementById("newIdeaTopic"),title=el.value.trim();if(!title)return;const n=ideasNote(),topic={id:crypto.randomUUID(),title,created:Date.now(),description:"",thoughts:[],checklist:[],photos:[]};n.items.push(topic);n.modified=Date.now();el.value="";persist();openIdeaTopic(topic.id)}
+function openIdeaTopic(id){const n=ideasNote(),topic=n.items.find(i=>i.id===id);if(!topic)return;currentIdeaTopicId=id;screens("ideaDetailScreen");document.getElementById("ideaDetailTitle").textContent="💡 "+topic.title;document.getElementById("ideaPhotoStatus").textContent="";document.getElementById("ideaDescriptionStatus").textContent="Autosaves as you type.";document.getElementById("ideaDescription").value=topic.description||"";renderIdeaChecklist();renderIdeaPhotos();renderIdeaThoughts()}
+function saveIdeaDescription(){const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;topic.description=document.getElementById("ideaDescription").value; n.modified=Date.now();persist();document.getElementById("ideaDescriptionStatus").textContent="Saved "+new Date().toLocaleTimeString()}
+function renderIdeaChecklist(){const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;const items=topic.checklist||[];document.getElementById("ideaChecklist").innerHTML=items.length?items.map((item,idx)=>`<div class="idea-check-item"><input type="checkbox" ${item.done?"checked":""} onchange="toggleIdeaTask(${idx})"><span style="${item.done?"text-decoration:line-through;opacity:.55":""}">${esc(item.t)}</span><button class="danger smallbtn" onclick="deleteIdeaTask(${idx})">×</button></div>`).join(""):`<div class="empty" style="padding:14px">No checklist items yet.</div>`}
+function addIdeaTask(){const el=document.getElementById("newIdeaTask"),text=el.value.trim();if(!text)return;const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;topic.checklist=topic.checklist||[];topic.checklist.push({t:text,done:false,created:Date.now()});n.modified=Date.now();el.value="";persist();renderIdeaChecklist()}
+function toggleIdeaTask(i){const n=ideasNote(),topic=n.items.find(x=>x.id===currentIdeaTopicId);if(!topic||!topic.checklist?.[i])return;topic.checklist[i].done=!topic.checklist[i].done;n.modified=Date.now();persist();renderIdeaChecklist()}
+function deleteIdeaTask(i){const n=ideasNote(),topic=n.items.find(x=>x.id===currentIdeaTopicId);if(topic&&topic.checklist?.[i]&&confirm("Delete this checklist item?")){topic.checklist.splice(i,1);n.modified=Date.now();persist();renderIdeaChecklist()}}
+function renderIdeaThoughts(){const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;const thoughts=topic.thoughts||[];document.getElementById("ideaThoughts").innerHTML=thoughts.length?thoughts.slice().reverse().map((t,r)=>{const idx=thoughts.length-1-r;return `<div class="idea-item"><div class="idea-text">${esc(t.t)}<div class="idea-time">${new Date(t.created).toLocaleString()}</div></div><button class="danger smallbtn" onclick="deleteIdeaThought(${idx})">×</button></div>`}).join(""):`<div class="empty" style="padding:24px">No thoughts yet. Add the first one above.</div>`}
+function renderIdeaPhotos(){const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;const photos=topic.photos||[],el=document.getElementById("ideaPhotos");el.innerHTML=photos.map((p,idx)=>`<div class="photo-card"><img data-photo-path="${esc(p.path)}" alt="Idea picture" onclick="showPhotoModal(this.src)"><button class="danger smallbtn" onclick="deleteIdeaPhoto(${idx});event.stopPropagation()">×</button><input class="photo-caption" value="${esc(p.caption||"")}" placeholder="Add a caption…" oninput="updateIdeaPhotoCaption(${idx},this.value)"></div>`).join("");hydratePhotoUrls(el)}
+function updateIdeaPhotoCaption(i,value){const n=ideasNote(),topic=n.items.find(x=>x.id===currentIdeaTopicId);if(!topic||!topic.photos?.[i])return;topic.photos[i].caption=value;n.modified=Date.now();persist()}
 function addIdeaThought(){const el=document.getElementById("newIdeaThought"),text=el.value.trim();if(!text)return;const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;topic.thoughts=topic.thoughts||[];topic.thoughts.push({t:text,created:Date.now()});n.modified=Date.now();el.value="";persist();renderIdeaThoughts()}
 function deleteIdeaThought(i){const n=ideasNote(),topic=n.items.find(x=>x.id===currentIdeaTopicId);if(topic&&confirm("Delete this thought?")){topic.thoughts.splice(i,1);n.modified=Date.now();persist();renderIdeaThoughts()}}
 function pickIdeaPhoto(){const input=document.getElementById("ideaPhotoInput");input.value="";input.click()}
-async function handleIdeaPhoto(event){const file=event.target.files?.[0];if(!file)return;const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;const status=document.getElementById("ideaPhotoStatus");try{status.textContent="Uploading picture…";const path=await uploadAppPhoto(file,`ideas/${topic.id}`);topic.photos=topic.photos||[];topic.photos.push({path,created:Date.now()});n.modified=Date.now();persist();renderIdeaPhotos();status.textContent="Picture added.";setTimeout(()=>{if(status.textContent==="Picture added.")status.textContent=""},1800)}catch(e){console.error(e);status.textContent="Could not add picture.";alert("Could not add that picture: "+friendlyError(e))}}
+async function handleIdeaPhoto(event){const file=event.target.files?.[0];if(!file)return;const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;const status=document.getElementById("ideaPhotoStatus");try{status.textContent="Uploading picture…";const path=await uploadAppPhoto(file,`ideas/${topic.id}`);topic.photos=topic.photos||[];topic.photos.push({path,created:Date.now(),caption:""});n.modified=Date.now();persist();renderIdeaPhotos();status.textContent="Picture added.";setTimeout(()=>{if(status.textContent==="Picture added.")status.textContent=""},1800)}catch(e){console.error(e);status.textContent="Could not add picture.";alert("Could not add that picture: "+friendlyError(e))}}
 async function deleteIdeaPhoto(i){const n=ideasNote(),topic=n.items.find(x=>x.id===currentIdeaTopicId);if(!topic)return;const photo=(topic.photos||[])[i];if(!photo||!confirm("Delete this picture?"))return;topic.photos.splice(i,1);n.modified=Date.now();persist();renderIdeaPhotos();await deleteAppPhoto(photo.path)}
-async function deleteIdeaTopic(id){const n=ideasNote(),topic=n.items.find(i=>i.id===id);if(topic&&confirm(`Delete the idea "${topic.title}" and all thoughts and pictures under it?`)){const paths=(topic.photos||[]).map(p=>p.path).filter(Boolean);n.items=n.items.filter(i=>i.id!==id);n.modified=Date.now();persist();renderIdeas();if(paths.length){try{const {error}=await db.storage.from(PHOTO_BUCKET).remove(paths);if(error)throw error;paths.forEach(p=>photoUrlCache.delete(p))}catch(e){console.error("Idea photo cleanup failed:",e)}}}}
+async function deleteIdeaTopic(id){const n=ideasNote(),topic=n.items.find(i=>i.id===id);if(topic&&confirm(`Delete the idea "${topic.title}" and everything under it?`)){const paths=(topic.photos||[]).map(p=>p.path).filter(Boolean);n.items=n.items.filter(i=>i.id!==id);n.modified=Date.now();persist();renderIdeas();if(paths.length){try{const {error}=await db.storage.from(PHOTO_BUCKET).remove(paths);if(error)throw error;paths.forEach(p=>photoUrlCache.delete(p))}catch(e){console.error("Idea photo cleanup failed:",e)}}}}
 function filterPinned(){pinnedOnly=!pinnedOnly;render()}
 function showVoice(){saveCurrent();screens("voiceScreen")}
 function command(c){
@@ -500,6 +531,8 @@ document.getElementById("newItem").addEventListener("keydown",e=>{if(e.key==="En
 document.getElementById("newGroceryItem").addEventListener("keydown",e=>{if(e.key==="Enter")addMasterGrocery()});
 document.getElementById("newIdeaTopic").addEventListener("keydown",e=>{if(e.key==="Enter")addIdeaTopic()});
 document.getElementById("newIdeaThought").addEventListener("keydown",e=>{if(e.key==="Enter")addIdeaThought()});
+document.getElementById("newIdeaTask").addEventListener("keydown",e=>{if(e.key==="Enter")addIdeaTask()});
+document.getElementById("ideaDescription").addEventListener("input",saveIdeaDescription);
 
 async function updatePassword(){
   const password=document.getElementById("newPassword").value;
@@ -543,7 +576,7 @@ boot();
 if("serviceWorker" in navigator){
   window.addEventListener("load",async()=>{
     try{
-      const reg=await navigator.serviceWorker.register("./service-worker.js?v=5",{updateViaCache:"none"});
+      const reg=await navigator.serviceWorker.register("./service-worker.js?v=6",{updateViaCache:"none"});
       await reg.update().catch(()=>{});
       let reloading=false;
       navigator.serviceWorker.addEventListener("controllerchange",()=>{
@@ -557,4 +590,3 @@ if("serviceWorker" in navigator){
 </script>
 </body>
 </html>
-
