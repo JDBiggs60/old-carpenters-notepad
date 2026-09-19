@@ -64,7 +64,18 @@ body.xlarge{font-size:22px}
 .grocery-item input[type=checkbox]{width:24px;height:24px;flex:0 0 auto}.grocery-item span,.idea-text{flex:1}
 .grocery-category{margin:15px 0 4px;font-weight:800;color:#4b2d1b}.smallbtn{padding:7px 9px;font-size:12px}
 .idea-time{font-size:11px;opacity:.6;margin-top:3px}.notice{font-size:13px;line-height:1.4;margin-bottom:8px}
-.idea-topic-btn{flex:1;text-align:left;border:0;background:transparent;color:inherit;padding:8px;display:flex;flex-direction:column;gap:4px}.idea-topic-btn span{font-size:12px;opacity:.65;font-weight:400}</style>
+.idea-topic-btn{flex:1;text-align:left;border:0;background:transparent;color:inherit;padding:8px;display:flex;flex-direction:column;gap:4px}.idea-topic-btn span{font-size:12px;opacity:.65;font-weight:400}
+.photo-thumb{width:58px;height:58px;object-fit:cover;border-radius:10px;border:1px solid #c9b979;background:#fff;flex:0 0 auto;cursor:pointer}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.photo-card{position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:#eee1a7;border:1px solid #c9b979}
+.photo-card img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer}
+.photo-card button{position:absolute;top:5px;right:5px;padding:5px 8px;border-radius:9px;background:#9f3f35}
+.photo-placeholder{width:58px;height:58px;border-radius:10px;border:1px dashed #bcae76;display:flex;align-items:center;justify-content:center;background:#fff8d5;flex:0 0 auto;font-size:23px;opacity:.7}
+.photo-note{font-size:12px;opacity:.7;align-self:center}
+.photo-modal{position:fixed;z-index:50;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;padding:18px}
+.photo-modal img{max-width:100%;max-height:88vh;border-radius:12px;box-shadow:0 4px 18px #000}
+.photo-modal .close-photo{position:absolute;top:18px;right:18px;width:48px;height:48px;border-radius:50%;font-size:25px;background:#fff;color:#321}
+</style>
 </head>
 <body>
 
@@ -137,6 +148,7 @@ body.xlarge{font-size:22px}
 <div class="card"><h3>Master Grocery List</h3><div class="notice">Scan this permanent list and check anything you need. Add your own items anytime.</div>
 <div class="row"><input id="newGroceryItem" placeholder="Add a grocery item…"><button onclick="addMasterGrocery()">Add</button></div>
 <select id="newGroceryCategory"><option>Produce</option><option>Meat</option><option>Dairy & Eggs</option><option>Bread</option><option>Pantry</option><option>Frozen</option><option>Drinks</option><option>Snacks</option><option>Household</option><option>Personal Care</option><option>Other</option></select>
+<input id="groceryPhotoInput" class="hidden" type="file" accept="image/*" onchange="handleGroceryPhoto(event)">
 <div id="masterGrocery"></div></div>
 </section>
 <section id="ideasScreen" class="screen hidden">
@@ -148,12 +160,17 @@ body.xlarge{font-size:22px}
 <div class="card"><div class="row"><button class="secondary" onclick="showIdeas()">← Ideas</button></div>
 <h3 id="ideaDetailTitle">💡 Idea</h3><div class="notice">Add as many related thoughts as you want. They stay together under this idea.</div>
 <div class="row"><input id="newIdeaThought" placeholder="Add another thought…"><button onclick="addIdeaThought()">Add</button></div>
+<div class="row"><button class="secondary" onclick="pickIdeaPhoto()">📷 Add Picture</button><span id="ideaPhotoStatus" class="photo-note"></span></div>
+<input id="ideaPhotoInput" class="hidden" type="file" accept="image/*" onchange="handleIdeaPhoto(event)">
+<div id="ideaPhotos" class="photo-grid"></div>
 <div id="ideaThoughts"></div></div></section>
 <section id="moreScreen" class="screen hidden">
 <div class="card"><h3>Settings</h3><label>Text size</label><select id="fontSize" onchange="setFont(this.value)"><option value="">Normal</option><option value="large">Large</option><option value="xlarge">Extra Large</option></select></div>
 <div class="card"><h3>Trash</h3><div id="trash"></div></div>
 <div class="card help"><h3>About</h3><b>Old Carpenter's Notepad</b><br>Simple notes. No nonsense.<br><br><b>Version 1.3</b><br><br>Your notes are saved automatically on this device and synchronized to your private cloud account.</div>
 </section>
+
+<div id="photoModal" class="photo-modal hidden" onclick="closePhotoModal()"><button class="close-photo" onclick="closePhotoModal();event.stopPropagation()">×</button><img id="photoModalImg" alt="Large photo" onclick="event.stopPropagation()"></div>
 
 <nav>
 <button onclick="showNotes()"><b>📝</b>Notes</button>
@@ -173,6 +190,9 @@ const LEGACY_KEY="ocn_notes_v1";
 const USER_KEY_PREFIX="ocn_notes_user_";
 let notes=[],current=null,pinnedOnly=false,currentUser=null,syncTimer=null;
 let booting=true,recoveryMode=false,realtimeChannel=null,lastRealtimeRefresh=0;
+const PHOTO_BUCKET="app-photos";
+const photoUrlCache=new Map();
+let groceryPhotoIndex=null;
 
 function safeParse(raw,fallback){try{return raw?JSON.parse(raw):fallback}catch{return fallback}}
 function userKey(){return currentUser?USER_KEY_PREFIX+currentUser.id:null}
@@ -319,6 +339,56 @@ function startRealtime(){
   }catch(e){console.warn("Realtime unavailable:",e)}
 }
 function stopRealtime(){if(realtimeChannel){try{db.removeChannel(realtimeChannel)}catch{}realtimeChannel=null}}
+async function signedPhotoUrl(path){
+  if(!path)return "";
+  const cached=photoUrlCache.get(path);
+  if(cached&&cached.expires>Date.now())return cached.url;
+  const {data,error}=await db.storage.from(PHOTO_BUCKET).createSignedUrl(path,3600);
+  if(error)throw error;
+  photoUrlCache.set(path,{url:data.signedUrl,expires:Date.now()+55*60*1000});
+  return data.signedUrl;
+}
+async function hydratePhotoUrls(root=document){
+  const imgs=[...root.querySelectorAll("img[data-photo-path]")];
+  await Promise.all(imgs.map(async img=>{
+    const path=img.dataset.photoPath;if(!path)return;
+    try{img.src=await signedPhotoUrl(path)}catch(e){console.error("Photo load failed:",e);img.alt="Photo unavailable"}
+  }));
+}
+function photoExtension(file){
+  const t=(file?.type||"").toLowerCase();
+  if(t.includes("png"))return "png";if(t.includes("webp"))return "webp";if(t.includes("gif"))return "gif";return "jpg";
+}
+async function preparePhoto(file){
+  if(!file||!file.type?.startsWith("image/"))throw new Error("Choose an image file.");
+  return await new Promise(resolve=>{
+    const url=URL.createObjectURL(file),img=new Image();
+    img.onload=()=>{
+      try{
+        const max=1600,scale=Math.min(1,max/Math.max(img.width,img.height));
+        const w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
+        const canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
+        canvas.getContext("2d").drawImage(img,0,0,w,h);
+        canvas.toBlob(blob=>{URL.revokeObjectURL(url);resolve(blob||file)},"image/jpeg",0.84);
+      }catch{URL.revokeObjectURL(url);resolve(file)}
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);resolve(file)};img.src=url;
+  });
+}
+async function uploadAppPhoto(file,folder){
+  if(!currentUser)throw new Error("Sign in before adding a picture.");
+  const prepared=await preparePhoto(file);
+  const ext=prepared.type==="image/jpeg"?"jpg":photoExtension(file);
+  const path=`${currentUser.id}/${folder}/${crypto.randomUUID()}.${ext}`;
+  const {error}=await db.storage.from(PHOTO_BUCKET).upload(path,prepared,{contentType:prepared.type||file.type,upsert:false});
+  if(error)throw error;return path;
+}
+async function deleteAppPhoto(path){
+  if(!path||!currentUser)return;
+  try{const {error}=await db.storage.from(PHOTO_BUCKET).remove([path]);if(error)throw error;photoUrlCache.delete(path)}catch(e){console.error("Photo delete failed:",e);setSyncStatus("Photo delete problem — note data kept")}
+}
+function showPhotoModal(src){if(!src)return;document.getElementById("photoModalImg").src=src;document.getElementById("photoModal").classList.remove("hidden")}
+function closePhotoModal(){document.getElementById("photoModal").classList.add("hidden");document.getElementById("photoModalImg").src=""}
 function esc(s){return(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function screens(id){["notesScreen","editorScreen","voiceScreen","groceryScreen","ideasScreen","ideaDetailScreen","moreScreen"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id))}
 function showNotes(){saveCurrent();screens("notesScreen");render()}
@@ -351,39 +421,56 @@ const STARTER_GROCERIES=[
 ["Toothpaste","Personal Care"],["Soap","Personal Care"],["Shampoo","Personal Care"]];
 function groceryNote(){
  let g=notes.find(n=>!n.trash&&n.title==="Grocery List");
- if(!g){g={id:crypto.randomUUID(),title:"Grocery List",body:"",type:"check",items:STARTER_GROCERIES.map(([t,category])=>({t,category,needed:false,done:false})),pinned:true,trash:false,modified:Date.now()};notes.push(g);persist()}
- else{g.type="check";g.items=(g.items||[]).map(i=>({t:i.t,category:i.category||"Other",needed:typeof i.needed==="boolean"?i.needed:!i.done,done:!!i.done}));if(!g.items.length){g.items=STARTER_GROCERIES.map(([t,category])=>({t,category,needed:false,done:false}));g.modified=Date.now();persist()}}
+ if(!g){g={id:crypto.randomUUID(),title:"Grocery List",body:"",type:"check",items:STARTER_GROCERIES.map(([t,category])=>({t,category,needed:false,done:false,photoPath:""})),pinned:true,trash:false,modified:Date.now()};notes.push(g);persist()}
+ else{g.type="check";g.items=(g.items||[]).map(i=>({t:i.t,category:i.category||"Other",needed:typeof i.needed==="boolean"?i.needed:!i.done,done:!!i.done,photoPath:i.photoPath||""}));if(!g.items.length){g.items=STARTER_GROCERIES.map(([t,category])=>({t,category,needed:false,done:false,photoPath:""}));g.modified=Date.now();persist()}}
  return g;
 }
 function openGrocery(){saveCurrent();screens("groceryScreen");renderGrocery()}
 function renderGrocery(){
  const g=groceryNote(),selected=g.items.filter(i=>i.needed);
- document.getElementById("shoppingList").innerHTML=selected.length?selected.map(i=>{const idx=g.items.indexOf(i);return `<div class="grocery-item"><input type="checkbox" ${i.done?"checked":""} onchange="togglePurchased(${idx})"><span style="${i.done?"text-decoration:line-through;opacity:.55":""}">${esc(i.t)}</span></div>`}).join(""):`<div class="empty" style="padding:18px">Your shopping list is empty.</div>`;
+ document.getElementById("shoppingList").innerHTML=selected.length?selected.map(i=>{const idx=g.items.indexOf(i);return `<div class="grocery-item"><input type="checkbox" ${i.done?"checked":""} onchange="togglePurchased(${idx})">${i.photoPath?`<img class="photo-thumb" data-photo-path="${esc(i.photoPath)}" alt="${esc(i.t)}" onclick="showPhotoModal(this.src)">`:""}<span style="${i.done?"text-decoration:line-through;opacity:.55":""}">${esc(i.t)}</span></div>`}).join(""):`<div class="empty" style="padding:18px">Your shopping list is empty.</div>`;
  const cats=[...new Set(g.items.map(i=>i.category||"Other"))];
- document.getElementById("masterGrocery").innerHTML=cats.map(cat=>`<div class="grocery-category">${esc(cat)}</div>`+g.items.map((i,idx)=>({i,idx})).filter(x=>(x.i.category||"Other")===cat).sort((a,b)=>a.i.t.localeCompare(b.i.t)).map(({i,idx})=>`<div class="grocery-item"><input type="checkbox" ${i.needed?"checked":""} onchange="toggleNeeded(${idx})"><span>${esc(i.t)}</span><button class="secondary smallbtn" onclick="removeMasterGrocery(${idx})">Remove</button></div>`).join("")).join("");
+ document.getElementById("masterGrocery").innerHTML=cats.map(cat=>`<div class="grocery-category">${esc(cat)}</div>`+g.items.map((i,idx)=>({i,idx})).filter(x=>(x.i.category||"Other")===cat).sort((a,b)=>a.i.t.localeCompare(b.i.t)).map(({i,idx})=>`<div class="grocery-item"><input type="checkbox" ${i.needed?"checked":""} onchange="toggleNeeded(${idx})">${i.photoPath?`<img class="photo-thumb" data-photo-path="${esc(i.photoPath)}" alt="${esc(i.t)}" onclick="showPhotoModal(this.src)">`:`<div class="photo-placeholder">📷</div>`}<span>${esc(i.t)}</span><button class="secondary smallbtn" onclick="pickGroceryPhoto(${idx})">${i.photoPath?"Change":"Photo"}</button><button class="secondary smallbtn" onclick="removeMasterGrocery(${idx})">Remove</button></div>`).join("")).join("");
+ hydratePhotoUrls(document.getElementById("groceryScreen"));
 }
 function toggleNeeded(i){const g=groceryNote();g.items[i].needed=!g.items[i].needed;if(!g.items[i].needed)g.items[i].done=false;g.modified=Date.now();persist();renderGrocery()}
 function togglePurchased(i){const g=groceryNote();g.items[i].done=!g.items[i].done;g.modified=Date.now();persist();renderGrocery()}
 function clearPurchased(){const g=groceryNote();g.items.forEach(i=>{if(i.needed&&i.done){i.needed=false;i.done=false}});g.modified=Date.now();persist();renderGrocery()}
-function addMasterGrocery(){const el=document.getElementById("newGroceryItem"),t=el.value.trim();if(!t)return;const g=groceryNote();if(g.items.some(i=>i.t.toLowerCase()===t.toLowerCase())){el.value="";return}g.items.push({t,category:document.getElementById("newGroceryCategory").value,needed:false,done:false});g.modified=Date.now();el.value="";persist();renderGrocery()}
-function removeMasterGrocery(i){const g=groceryNote(),item=g.items[i];if(confirm(`Remove "${item.t}" from the permanent grocery list?`)){g.items.splice(i,1);g.modified=Date.now();persist();renderGrocery()}}
+function addMasterGrocery(){const el=document.getElementById("newGroceryItem"),t=el.value.trim();if(!t)return;const g=groceryNote();if(g.items.some(i=>i.t.toLowerCase()===t.toLowerCase())){el.value="";return}g.items.push({t,category:document.getElementById("newGroceryCategory").value,needed:false,done:false,photoPath:""});g.modified=Date.now();el.value="";persist();renderGrocery()}
+function pickGroceryPhoto(i){groceryPhotoIndex=i;const input=document.getElementById("groceryPhotoInput");input.value="";input.click()}
+async function handleGroceryPhoto(event){
+ const file=event.target.files?.[0],idx=groceryPhotoIndex;groceryPhotoIndex=null;if(!file||idx===null)return;
+ const g=groceryNote(),item=g.items[idx];if(!item)return;const oldPath=item.photoPath||"";
+ try{setSyncStatus("Uploading grocery picture…");const path=await uploadAppPhoto(file,"grocery");item.photoPath=path;g.modified=Date.now();persist();renderGrocery();if(oldPath&&oldPath!==path)await deleteAppPhoto(oldPath)}
+ catch(e){console.error(e);alert("Could not add that picture: "+friendlyError(e))}
+}
+async function removeMasterGrocery(i){const g=groceryNote(),item=g.items[i];if(confirm(`Remove "${item.t}" from the permanent grocery list?`)){const path=item.photoPath||"";g.items.splice(i,1);g.modified=Date.now();persist();renderGrocery();if(path)await deleteAppPhoto(path)}}
 let currentIdeaTopicId=null;
-function ideasNote(){let n=notes.find(n=>!n.trash&&n.title==="__IDEAS__");if(!n){n={id:crypto.randomUUID(),title:"__IDEAS__",body:"",type:"check",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);persist()}n.items=(n.items||[]).map(i=>i.thoughts?i:{id:crypto.randomUUID(),title:i.t||"Untitled Idea",created:i.created||Date.now(),thoughts:[]});return n}
+function ideasNote(){
+ let n=notes.find(n=>!n.trash&&n.title==="__IDEAS__");
+ if(!n){n={id:crypto.randomUUID(),title:"__IDEAS__",body:"",type:"check",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);persist()}
+ n.items=(n.items||[]).map(i=>i.thoughts?{...i,photos:Array.isArray(i.photos)?i.photos:[]}:{id:crypto.randomUUID(),title:i.t||"Untitled Idea",created:i.created||Date.now(),thoughts:[],photos:[]});
+ return n;
+}
 function showIdeas(){saveCurrent();currentIdeaTopicId=null;screens("ideasScreen");renderIdeas()}
-function renderIdeas(){const n=ideasNote(),q=(document.getElementById("ideaSearch")?.value||"").trim().toLowerCase(),topics=n.items.filter(i=>(i.title+" "+(i.thoughts||[]).map(t=>t.t).join(" ")).toLowerCase().includes(q));document.getElementById("ideasList").innerHTML=topics.length?topics.slice().reverse().map(i=>`<div class="idea-item"><button class="idea-topic-btn" onclick="openIdeaTopic('${i.id}')"><b>${esc(i.title)}</b><span>${(i.thoughts||[]).length} thought${(i.thoughts||[]).length===1?"":"s"}</span></button><button class="danger smallbtn" onclick="deleteIdeaTopic('${i.id}')">×</button></div>`).join(""):`<div class="empty" style="padding:24px">${q?"No matching ideas.":"No ideas yet."}</div>`}
-function addIdeaTopic(){const el=document.getElementById("newIdeaTopic"),title=el.value.trim();if(!title)return;const n=ideasNote(),topic={id:crypto.randomUUID(),title,created:Date.now(),thoughts:[]};n.items.push(topic);n.modified=Date.now();el.value="";persist();openIdeaTopic(topic.id)}
-function openIdeaTopic(id){const n=ideasNote(),topic=n.items.find(i=>i.id===id);if(!topic)return;currentIdeaTopicId=id;screens("ideaDetailScreen");document.getElementById("ideaDetailTitle").textContent="💡 "+topic.title;renderIdeaThoughts()}
-function renderIdeaThoughts(){const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;const thoughts=topic.thoughts||[];document.getElementById("ideaThoughts").innerHTML=thoughts.length?thoughts.slice().reverse().map((t,r)=>{const idx=thoughts.length-1-r;return `<div class="idea-item"><div class="idea-text">${esc(t.t)}<div class="idea-time">${new Date(t.created).toLocaleString()}</div></div><button class="danger smallbtn" onclick="deleteIdeaThought(${idx})">×</button></div>`}).join(""):`<div class="empty" style="padding:24px">No thoughts yet. Add the first one above.</div>`}
+function renderIdeas(){const n=ideasNote(),q=(document.getElementById("ideaSearch")?.value||"").trim().toLowerCase(),topics=n.items.filter(i=>(i.title+" "+(i.thoughts||[]).map(t=>t.t).join(" ")).toLowerCase().includes(q));document.getElementById("ideasList").innerHTML=topics.length?topics.slice().reverse().map(i=>`<div class="idea-item"><button class="idea-topic-btn" onclick="openIdeaTopic('${i.id}')"><b>${esc(i.title)}</b><span>${(i.thoughts||[]).length} thought${(i.thoughts||[]).length===1?"":"s"} • ${(i.photos||[]).length} picture${(i.photos||[]).length===1?"":"s"}</span></button><button class="danger smallbtn" onclick="deleteIdeaTopic('${i.id}')">×</button></div>`).join(""):`<div class="empty" style="padding:24px">${q?"No matching ideas.":"No ideas yet."}</div>`}
+function addIdeaTopic(){const el=document.getElementById("newIdeaTopic"),title=el.value.trim();if(!title)return;const n=ideasNote(),topic={id:crypto.randomUUID(),title,created:Date.now(),thoughts:[],photos:[]};n.items.push(topic);n.modified=Date.now();el.value="";persist();openIdeaTopic(topic.id)}
+function openIdeaTopic(id){const n=ideasNote(),topic=n.items.find(i=>i.id===id);if(!topic)return;currentIdeaTopicId=id;screens("ideaDetailScreen");document.getElementById("ideaDetailTitle").textContent="💡 "+topic.title;document.getElementById("ideaPhotoStatus").textContent="";renderIdeaThoughts()}
+function renderIdeaThoughts(){const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;const thoughts=topic.thoughts||[];document.getElementById("ideaThoughts").innerHTML=thoughts.length?thoughts.slice().reverse().map((t,r)=>{const idx=thoughts.length-1-r;return `<div class="idea-item"><div class="idea-text">${esc(t.t)}<div class="idea-time">${new Date(t.created).toLocaleString()}</div></div><button class="danger smallbtn" onclick="deleteIdeaThought(${idx})">×</button></div>`}).join(""):`<div class="empty" style="padding:24px">No thoughts yet. Add the first one above.</div>`;renderIdeaPhotos()}
+function renderIdeaPhotos(){const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;const photos=topic.photos||[],el=document.getElementById("ideaPhotos");el.innerHTML=photos.map((p,idx)=>`<div class="photo-card"><img data-photo-path="${esc(p.path)}" alt="Idea picture" onclick="showPhotoModal(this.src)"><button class="danger smallbtn" onclick="deleteIdeaPhoto(${idx});event.stopPropagation()">×</button></div>`).join("");hydratePhotoUrls(el)}
 function addIdeaThought(){const el=document.getElementById("newIdeaThought"),text=el.value.trim();if(!text)return;const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;topic.thoughts=topic.thoughts||[];topic.thoughts.push({t:text,created:Date.now()});n.modified=Date.now();el.value="";persist();renderIdeaThoughts()}
 function deleteIdeaThought(i){const n=ideasNote(),topic=n.items.find(x=>x.id===currentIdeaTopicId);if(topic&&confirm("Delete this thought?")){topic.thoughts.splice(i,1);n.modified=Date.now();persist();renderIdeaThoughts()}}
-function deleteIdeaTopic(id){const n=ideasNote(),topic=n.items.find(i=>i.id===id);if(topic&&confirm(`Delete the idea "${topic.title}" and all thoughts under it?`)){n.items=n.items.filter(i=>i.id!==id);n.modified=Date.now();persist();renderIdeas()}}
+function pickIdeaPhoto(){const input=document.getElementById("ideaPhotoInput");input.value="";input.click()}
+async function handleIdeaPhoto(event){const file=event.target.files?.[0];if(!file)return;const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;const status=document.getElementById("ideaPhotoStatus");try{status.textContent="Uploading picture…";const path=await uploadAppPhoto(file,`ideas/${topic.id}`);topic.photos=topic.photos||[];topic.photos.push({path,created:Date.now()});n.modified=Date.now();persist();renderIdeaPhotos();status.textContent="Picture added.";setTimeout(()=>{if(status.textContent==="Picture added.")status.textContent=""},1800)}catch(e){console.error(e);status.textContent="Could not add picture.";alert("Could not add that picture: "+friendlyError(e))}}
+async function deleteIdeaPhoto(i){const n=ideasNote(),topic=n.items.find(x=>x.id===currentIdeaTopicId);if(!topic)return;const photo=(topic.photos||[])[i];if(!photo||!confirm("Delete this picture?"))return;topic.photos.splice(i,1);n.modified=Date.now();persist();renderIdeaPhotos();await deleteAppPhoto(photo.path)}
+async function deleteIdeaTopic(id){const n=ideasNote(),topic=n.items.find(i=>i.id===id);if(topic&&confirm(`Delete the idea "${topic.title}" and all thoughts and pictures under it?`)){const paths=(topic.photos||[]).map(p=>p.path).filter(Boolean);n.items=n.items.filter(i=>i.id!==id);n.modified=Date.now();persist();renderIdeas();if(paths.length){try{const {error}=await db.storage.from(PHOTO_BUCKET).remove(paths);if(error)throw error;paths.forEach(p=>photoUrlCache.delete(p))}catch(e){console.error("Idea photo cleanup failed:",e)}}}}
 function filterPinned(){pinnedOnly=!pinnedOnly;render()}
 function showVoice(){saveCurrent();screens("voiceScreen")}
 function command(c){
   const s=c.trim();if(!s){document.getElementById("voiceStatus").textContent="Say or type a command first.";return}
   document.getElementById("voiceStatus").textContent="Heard: “"+s+"”";
   let m=s.match(/^add (.+?) to (?:my |the )?grocery list[.!]?$/i);
-  if(m){let item=m[1].replace(/^a |^an /i,"");let g=notes.find(n=>!n.trash&&n.title.toLowerCase()==="grocery list");if(!g){g={id:crypto.randomUUID(),title:"Grocery List",type:"check",items:[],body:"",pinned:true,trash:false,modified:Date.now()};notes.push(g)}g.items.push({t:item.charAt(0).toUpperCase()+item.slice(1),done:false});g.modified=Date.now();persist();document.getElementById("voiceStatus").textContent="✓ Added “"+item+"” to Grocery List.";return}
+  if(m){let item=m[1].replace(/^a |^an /i,"");let g=notes.find(n=>!n.trash&&n.title.toLowerCase()==="grocery list");if(!g){g={id:crypto.randomUUID(),title:"Grocery List",type:"check",items:[],body:"",pinned:true,trash:false,modified:Date.now()};notes.push(g)}g.items.push({t:item.charAt(0).toUpperCase()+item.slice(1),category:"Other",needed:true,done:false,photoPath:""});g.modified=Date.now();persist();document.getElementById("voiceStatus").textContent="✓ Added “"+item+"” to Grocery List.";return}
   m=s.match(/^create (?:a )?(?:new )?note called (.+)$/i);if(m){notes.push({id:crypto.randomUUID(),title:m[1],body:"",type:"text",items:[],pinned:false,trash:false,modified:Date.now()});persist();document.getElementById("voiceStatus").textContent="✓ Created note “"+m[1]+"”.";return}
   m=s.match(/^add (?:a )?to-do[: ]+(.+)$/i);if(m){let n=notes.find(n=>!n.trash&&n.title==="To Do")||{id:crypto.randomUUID(),title:"To Do",body:"",type:"check",items:[],pinned:true,trash:false,modified:Date.now()};if(!notes.includes(n))notes.push(n);n.items.push({t:m[1],done:false});n.modified=Date.now();persist();document.getElementById("voiceStatus").textContent="✓ Added to To Do.";return}
   m=s.match(/find (?:my )?note about (.+)/i);if(m){const q=m[1].toLowerCase(),n=notes.find(n=>!n.trash&&(n.title+" "+n.body).toLowerCase().includes(q));if(n)openNote(n.id);else document.getElementById("voiceStatus").textContent="I couldn't find a matching note.";return}
@@ -456,7 +543,7 @@ boot();
 if("serviceWorker" in navigator){
   window.addEventListener("load",async()=>{
     try{
-      const reg=await navigator.serviceWorker.register("./service-worker.js?v=4",{updateViaCache:"none"});
+      const reg=await navigator.serviceWorker.register("./service-worker.js?v=5",{updateViaCache:"none"});
       await reg.update().catch(()=>{});
       let reloading=false;
       navigator.serviceWorker.addEventListener("controllerchange",()=>{
