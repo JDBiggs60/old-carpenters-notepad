@@ -152,7 +152,7 @@ body.xlarge{font-size:22px}
 <section id="moreScreen" class="screen hidden">
 <div class="card"><h3>Settings</h3><label>Text size</label><select id="fontSize" onchange="setFont(this.value)"><option value="">Normal</option><option value="large">Large</option><option value="xlarge">Extra Large</option></select></div>
 <div class="card"><h3>Trash</h3><div id="trash"></div></div>
-<div class="card help"><h3>About</h3><b>Old Carpenter's Notepad</b><br>Simple notes. No nonsense.<br><br><b>Version 1.2</b><br><br>Your notes are saved automatically on this device and synchronized to your private cloud account.</div>
+<div class="card help"><h3>About</h3><b>Old Carpenter's Notepad</b><br>Simple notes. No nonsense.<br><br><b>Version 1.3</b><br><br>Your notes are saved automatically on this device and synchronized to your private cloud account.</div>
 </section>
 
 <nav>
@@ -456,8 +456,14 @@ boot();
 if("serviceWorker" in navigator){
   window.addEventListener("load",async()=>{
     try{
-      const reg=await navigator.serviceWorker.register("./service-worker.js");
-      reg.update().catch(()=>{});
+      const reg=await navigator.serviceWorker.register("./service-worker.js?v=4",{updateViaCache:"none"});
+      await reg.update().catch(()=>{});
+      let reloading=false;
+      navigator.serviceWorker.addEventListener("controllerchange",()=>{
+        if(reloading)return;
+        reloading=true;
+        window.location.reload();
+      });
     }catch(e){console.warn("Service worker registration failed",e)}
   });
 }
