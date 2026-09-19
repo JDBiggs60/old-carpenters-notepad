@@ -64,7 +64,7 @@ body.xlarge{font-size:22px}
 .grocery-item input[type=checkbox]{width:24px;height:24px;flex:0 0 auto}.grocery-item span,.idea-text{flex:1}
 .grocery-category{margin:15px 0 4px;font-weight:800;color:#4b2d1b}.smallbtn{padding:7px 9px;font-size:12px}
 .idea-time{font-size:11px;opacity:.6;margin-top:3px}.notice{font-size:13px;line-height:1.4;margin-bottom:8px}
-</style>
+.idea-topic-btn{flex:1;text-align:left;border:0;background:transparent;color:inherit;padding:8px;display:flex;flex-direction:column;gap:4px}.idea-topic-btn span{font-size:12px;opacity:.65;font-weight:400}</style>
 </head>
 <body>
 
@@ -140,13 +140,19 @@ body.xlarge{font-size:22px}
 <div id="masterGrocery"></div></div>
 </section>
 <section id="ideasScreen" class="screen hidden">
-<div class="card"><h3>💡 Ideas</h3><div class="notice">Quick thoughts, quotes, things to build, or anything you don't want to forget.</div>
-<div class="row"><input id="newIdea" placeholder="Type or dictate an idea…"><button onclick="addIdea()">Add</button></div><div id="ideasList"></div></div>
-</section>
+<div class="card"><h3>💡 Ideas</h3><div class="notice">Keep related thoughts together under one idea topic.</div>
+<input id="ideaSearch" placeholder="Search ideas…" oninput="renderIdeas()">
+<div class="row"><input id="newIdeaTopic" placeholder="New idea topic…"><button onclick="addIdeaTopic()">Add</button></div>
+<div id="ideasList"></div></div></section>
+<section id="ideaDetailScreen" class="screen hidden">
+<div class="card"><div class="row"><button class="secondary" onclick="showIdeas()">← Ideas</button></div>
+<h3 id="ideaDetailTitle">💡 Idea</h3><div class="notice">Add as many related thoughts as you want. They stay together under this idea.</div>
+<div class="row"><input id="newIdeaThought" placeholder="Add another thought…"><button onclick="addIdeaThought()">Add</button></div>
+<div id="ideaThoughts"></div></div></section>
 <section id="moreScreen" class="screen hidden">
 <div class="card"><h3>Settings</h3><label>Text size</label><select id="fontSize" onchange="setFont(this.value)"><option value="">Normal</option><option value="large">Large</option><option value="xlarge">Extra Large</option></select></div>
 <div class="card"><h3>Trash</h3><div id="trash"></div></div>
-<div class="card help"><h3>About</h3><b>Old Carpenter's Notepad</b><br>Simple notes. No nonsense.<br><br><b>Version 1.1.1</b><br><br>Your notes are saved automatically on this device and synchronized to your private cloud account.</div>
+<div class="card help"><h3>About</h3><b>Old Carpenter's Notepad</b><br>Simple notes. No nonsense.<br><br><b>Version 1.2</b><br><br>Your notes are saved automatically on this device and synchronized to your private cloud account.</div>
 </section>
 
 <nav>
@@ -314,7 +320,7 @@ function startRealtime(){
 }
 function stopRealtime(){if(realtimeChannel){try{db.removeChannel(realtimeChannel)}catch{}realtimeChannel=null}}
 function esc(s){return(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-function screens(id){["notesScreen","editorScreen","voiceScreen","groceryScreen","ideasScreen","moreScreen"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id))}
+function screens(id){["notesScreen","editorScreen","voiceScreen","groceryScreen","ideasScreen","ideaDetailScreen","moreScreen"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id))}
 function showNotes(){saveCurrent();screens("notesScreen");render()}
 function render(){
   const q=document.getElementById("search").value.toLowerCase();
@@ -346,13 +352,7 @@ const STARTER_GROCERIES=[
 function groceryNote(){
  let g=notes.find(n=>!n.trash&&n.title==="Grocery List");
  if(!g){g={id:crypto.randomUUID(),title:"Grocery List",body:"",type:"check",items:STARTER_GROCERIES.map(([t,category])=>({t,category,needed:false,done:false})),pinned:true,trash:false,modified:Date.now()};notes.push(g);persist()}
- else{
- g.type="check";
- g.items=(g.items||[]).map(i=>({t:i.t,category:i.category||"Other",needed:typeof i.needed==="boolean"?i.needed:!i.done,done:!!i.done}));
- let changed=false;
- STARTER_GROCERIES.forEach(([t,category])=>{if(!g.items.some(i=>i.t.trim().toLowerCase()===t.toLowerCase())){g.items.push({t,category,needed:false,done:false});changed=true}});
- if(changed){g.modified=Date.now();persist()}
-}
+ else{g.type="check";g.items=(g.items||[]).map(i=>({t:i.t,category:i.category||"Other",needed:typeof i.needed==="boolean"?i.needed:!i.done,done:!!i.done}));if(!g.items.length){g.items=STARTER_GROCERIES.map(([t,category])=>({t,category,needed:false,done:false}));g.modified=Date.now();persist()}}
  return g;
 }
 function openGrocery(){saveCurrent();screens("groceryScreen");renderGrocery()}
@@ -367,17 +367,16 @@ function togglePurchased(i){const g=groceryNote();g.items[i].done=!g.items[i].do
 function clearPurchased(){const g=groceryNote();g.items.forEach(i=>{if(i.needed&&i.done){i.needed=false;i.done=false}});g.modified=Date.now();persist();renderGrocery()}
 function addMasterGrocery(){const el=document.getElementById("newGroceryItem"),t=el.value.trim();if(!t)return;const g=groceryNote();if(g.items.some(i=>i.t.toLowerCase()===t.toLowerCase())){el.value="";return}g.items.push({t,category:document.getElementById("newGroceryCategory").value,needed:false,done:false});g.modified=Date.now();el.value="";persist();renderGrocery()}
 function removeMasterGrocery(i){const g=groceryNote(),item=g.items[i];if(confirm(`Remove "${item.t}" from the permanent grocery list?`)){g.items.splice(i,1);g.modified=Date.now();persist();renderGrocery()}}
-function ideasNote(){let n=notes.find(n=>!n.trash&&n.title==="__IDEAS__");if(!n){n={id:crypto.randomUUID(),title:"__IDEAS__",body:"",type:"check",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);persist()}return n}
-function showIdeas(){saveCurrent();screens("ideasScreen");renderIdeas()}
-function renderIdeas(){const n=ideasNote();document.getElementById("ideasList").innerHTML=n.items.length?n.items.slice().reverse().map((i,r)=>{const idx=n.items.length-1-r;return `<div class="idea-item"><div class="idea-text">${esc(i.t)}<div class="idea-time">${new Date(i.created||n.modified).toLocaleString()}</div></div><button class="secondary smallbtn" onclick="ideaToNote(${idx})">Make Note</button><button class="danger smallbtn" onclick="deleteIdea(${idx})">×</button></div>`}).join(""):`<div class="empty" style="padding:24px">No ideas yet.</div>`}
-function addIdea(){const el=document.getElementById("newIdea"),t=el.value.trim();if(!t)return;const n=ideasNote();n.items.push({t,created:Date.now(),done:false});n.modified=Date.now();el.value="";persist();renderIdeas()}
-function deleteIdea(i){const n=ideasNote();if(confirm("Delete this idea?")){n.items.splice(i,1);n.modified=Date.now();persist();renderIdeas()}}
-function ideaToNote(i){
- const a=ideasNote(),idea=a.items[i];if(!idea)return;
- if(!confirm("Turn this idea into a regular note?"))return;
- const n={id:crypto.randomUUID(),title:"Idea",body:idea.t,type:"text",items:[],pinned:false,trash:false,modified:Date.now()};
- notes.push(n);a.items.splice(i,1);a.modified=Date.now();persist();openNote(n.id)
-}
+let currentIdeaTopicId=null;
+function ideasNote(){let n=notes.find(n=>!n.trash&&n.title==="__IDEAS__");if(!n){n={id:crypto.randomUUID(),title:"__IDEAS__",body:"",type:"check",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);persist()}n.items=(n.items||[]).map(i=>i.thoughts?i:{id:crypto.randomUUID(),title:i.t||"Untitled Idea",created:i.created||Date.now(),thoughts:[]});return n}
+function showIdeas(){saveCurrent();currentIdeaTopicId=null;screens("ideasScreen");renderIdeas()}
+function renderIdeas(){const n=ideasNote(),q=(document.getElementById("ideaSearch")?.value||"").trim().toLowerCase(),topics=n.items.filter(i=>(i.title+" "+(i.thoughts||[]).map(t=>t.t).join(" ")).toLowerCase().includes(q));document.getElementById("ideasList").innerHTML=topics.length?topics.slice().reverse().map(i=>`<div class="idea-item"><button class="idea-topic-btn" onclick="openIdeaTopic('${i.id}')"><b>${esc(i.title)}</b><span>${(i.thoughts||[]).length} thought${(i.thoughts||[]).length===1?"":"s"}</span></button><button class="danger smallbtn" onclick="deleteIdeaTopic('${i.id}')">×</button></div>`).join(""):`<div class="empty" style="padding:24px">${q?"No matching ideas.":"No ideas yet."}</div>`}
+function addIdeaTopic(){const el=document.getElementById("newIdeaTopic"),title=el.value.trim();if(!title)return;const n=ideasNote(),topic={id:crypto.randomUUID(),title,created:Date.now(),thoughts:[]};n.items.push(topic);n.modified=Date.now();el.value="";persist();openIdeaTopic(topic.id)}
+function openIdeaTopic(id){const n=ideasNote(),topic=n.items.find(i=>i.id===id);if(!topic)return;currentIdeaTopicId=id;screens("ideaDetailScreen");document.getElementById("ideaDetailTitle").textContent="💡 "+topic.title;renderIdeaThoughts()}
+function renderIdeaThoughts(){const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;const thoughts=topic.thoughts||[];document.getElementById("ideaThoughts").innerHTML=thoughts.length?thoughts.slice().reverse().map((t,r)=>{const idx=thoughts.length-1-r;return `<div class="idea-item"><div class="idea-text">${esc(t.t)}<div class="idea-time">${new Date(t.created).toLocaleString()}</div></div><button class="danger smallbtn" onclick="deleteIdeaThought(${idx})">×</button></div>`}).join(""):`<div class="empty" style="padding:24px">No thoughts yet. Add the first one above.</div>`}
+function addIdeaThought(){const el=document.getElementById("newIdeaThought"),text=el.value.trim();if(!text)return;const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;topic.thoughts=topic.thoughts||[];topic.thoughts.push({t:text,created:Date.now()});n.modified=Date.now();el.value="";persist();renderIdeaThoughts()}
+function deleteIdeaThought(i){const n=ideasNote(),topic=n.items.find(x=>x.id===currentIdeaTopicId);if(topic&&confirm("Delete this thought?")){topic.thoughts.splice(i,1);n.modified=Date.now();persist();renderIdeaThoughts()}}
+function deleteIdeaTopic(id){const n=ideasNote(),topic=n.items.find(i=>i.id===id);if(topic&&confirm(`Delete the idea "${topic.title}" and all thoughts under it?`)){n.items=n.items.filter(i=>i.id!==id);n.modified=Date.now();persist();renderIdeas()}}
 function filterPinned(){pinnedOnly=!pinnedOnly;render()}
 function showVoice(){saveCurrent();screens("voiceScreen")}
 function command(c){
@@ -412,7 +411,8 @@ document.getElementById("authPassword").addEventListener("keydown",e=>{if(e.key=
 document.getElementById("newPassword").addEventListener("keydown",e=>{if(e.key==="Enter")updatePassword()});
 document.getElementById("newItem").addEventListener("keydown",e=>{if(e.key==="Enter")addChecklistItem()});
 document.getElementById("newGroceryItem").addEventListener("keydown",e=>{if(e.key==="Enter")addMasterGrocery()});
-document.getElementById("newIdea").addEventListener("keydown",e=>{if(e.key==="Enter")addIdea()});
+document.getElementById("newIdeaTopic").addEventListener("keydown",e=>{if(e.key==="Enter")addIdeaTopic()});
+document.getElementById("newIdeaThought").addEventListener("keydown",e=>{if(e.key==="Enter")addIdeaThought()});
 
 async function updatePassword(){
   const password=document.getElementById("newPassword").value;
