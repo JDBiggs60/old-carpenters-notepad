@@ -59,6 +59,11 @@ body.xlarge{font-size:22px}
 .passwordrow button{white-space:nowrap}
 .notice{font-size:13px;line-height:1.35}
 @media(min-width:700px){.app,.authwrap{box-shadow:0 0 24px #0002}}
+
+.grocery-item,.idea-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #d7c77b}
+.grocery-item input[type=checkbox]{width:24px;height:24px;flex:0 0 auto}.grocery-item span,.idea-text{flex:1}
+.grocery-category{margin:15px 0 4px;font-weight:800;color:#4b2d1b}.smallbtn{padding:7px 9px;font-size:12px}
+.idea-time{font-size:11px;opacity:.6;margin-top:3px}.notice{font-size:13px;line-height:1.4;margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -96,7 +101,7 @@ body.xlarge{font-size:22px}
 <div id="appRoot" class="app hidden">
 <header>
   <h1>Old Carpenter's Notepad</h1>
-  <div class="search"><input id="search" placeholder="Search notes…"><button aria-label="Voice commands" onclick="showVoice()">🎙</button></div>
+  <div class="search"><input id="search" placeholder="Search notes…"><button aria-label="Ideas" onclick="showIdeas()">💡</button></div>
 </header>
 <div class="syncbar"><span id="syncStatus">Starting…</span><button class="secondary" style="padding:4px 8px;font-size:12px" onclick="signOut()">Sign out</button></div>
 
@@ -126,16 +131,28 @@ body.xlarge{font-size:22px}
 </div>
 </section>
 
+
+<section id="groceryScreen" class="screen hidden">
+<div class="card"><h3>🛒 Shopping List</h3><div class="notice">Items selected from the Master List appear here. Check them off as they go in the cart.</div><div id="shoppingList"></div><div class="row"><button class="secondary" onclick="clearPurchased()">Clear Purchased</button></div></div>
+<div class="card"><h3>Master Grocery List</h3><div class="notice">Scan this permanent list and check anything you need. Add your own items anytime.</div>
+<div class="row"><input id="newGroceryItem" placeholder="Add a grocery item…"><button onclick="addMasterGrocery()">Add</button></div>
+<select id="newGroceryCategory"><option>Produce</option><option>Meat</option><option>Dairy & Eggs</option><option>Bread</option><option>Pantry</option><option>Frozen</option><option>Drinks</option><option>Snacks</option><option>Household</option><option>Personal Care</option><option>Other</option></select>
+<div id="masterGrocery"></div></div>
+</section>
+<section id="ideasScreen" class="screen hidden">
+<div class="card"><h3>💡 Ideas</h3><div class="notice">Quick thoughts, quotes, things to build, or anything you don't want to forget.</div>
+<div class="row"><input id="newIdea" placeholder="Type or dictate an idea…"><button onclick="addIdea()">Add</button></div><div id="ideasList"></div></div>
+</section>
 <section id="moreScreen" class="screen hidden">
 <div class="card"><h3>Settings</h3><label>Text size</label><select id="fontSize" onchange="setFont(this.value)"><option value="">Normal</option><option value="large">Large</option><option value="xlarge">Extra Large</option></select></div>
 <div class="card"><h3>Trash</h3><div id="trash"></div></div>
-<div class="card help"><h3>About</h3><b>Old Carpenter's Notepad</b><br>Simple notes. No nonsense.<br><br>Your notes are saved automatically on this device and synchronized to your private cloud account.</div>
+<div class="card help"><h3>About</h3><b>Old Carpenter's Notepad</b><br>Simple notes. No nonsense.<br><br><b>Version 1.1</b><br><br>Your notes are saved automatically on this device and synchronized to your private cloud account.</div>
 </section>
 
 <nav>
 <button onclick="showNotes()"><b>📝</b>Notes</button>
-<button onclick="openGrocery()"><b>☑</b>Grocery</button>
-<button onclick="showVoice()"><b>🎙</b>Voice</button>
+<button onclick="openGrocery()"><b>🛒</b>Grocery</button>
+<button onclick="showIdeas()"><b>💡</b>Ideas</button>
 <button onclick="showMore()"><b>⚙️</b>More</button>
 </nav>
 </div>
@@ -297,11 +314,11 @@ function startRealtime(){
 }
 function stopRealtime(){if(realtimeChannel){try{db.removeChannel(realtimeChannel)}catch{}realtimeChannel=null}}
 function esc(s){return(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-function screens(id){["notesScreen","editorScreen","voiceScreen","moreScreen"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id))}
+function screens(id){["notesScreen","editorScreen","voiceScreen","groceryScreen","ideasScreen","moreScreen"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id))}
 function showNotes(){saveCurrent();screens("notesScreen");render()}
 function render(){
   const q=document.getElementById("search").value.toLowerCase();
-  const a=notes.filter(n=>!n.trash&&(!pinnedOnly||n.pinned)&&((n.title+" "+n.body+" "+(n.items||[]).map(i=>i.t).join(" ")).toLowerCase().includes(q))).sort((a,b)=>(b.pinned-a.pinned)||(b.modified-a.modified));
+  const a=notes.filter(n=>!n.trash&&n.title!=="__IDEAS__"&&n.title!=="Grocery List"&&(!pinnedOnly||n.pinned)&&((n.title+" "+n.body+" "+(n.items||[]).map(i=>i.t).join(" ")).toLowerCase().includes(q))).sort((a,b)=>(b.pinned-a.pinned)||(b.modified-a.modified));
   document.getElementById("pinnedBtn").textContent=pinnedOnly?"📌 Showing Pinned":"📌 Pinned";
   const el=document.getElementById("notes");
   el.innerHTML=a.length?a.map(n=>`<div class="card" onclick="openNote('${n.id}')"><h3>${n.pinned?"📌 ":""}${esc(n.title||"Untitled")}</h3><div class="preview">${n.type==="check"?(n.items.filter(i=>!i.done).length+" items left"):esc((n.body||"").slice(0,110))}</div><div class="meta">${new Date(n.modified).toLocaleString()}</div></div>`).join(""):`<div class="empty">No notes found.</div>`;
@@ -319,7 +336,37 @@ function renderChecks(){if(!current||current.type!=="check")return;document.getE
 function addChecklistItem(){const v=document.getElementById("newItem").value.trim();if(!v||!current)return;current.items.push({t:v,done:false});document.getElementById("newItem").value="";current.modified=Date.now();persist();renderChecks()}
 function toggleItem(i){current.items[i].done=!current.items[i].done;current.modified=Date.now();persist();renderChecks()}
 function delItem(i){current.items.splice(i,1);current.modified=Date.now();persist();renderChecks()}
-function openGrocery(){let n=notes.find(n=>!n.trash&&n.title.toLowerCase()==="grocery list");if(!n){n={id:crypto.randomUUID(),title:"Grocery List",body:"",type:"check",items:[],pinned:true,trash:false,modified:Date.now()};notes.push(n);persist()}openNote(n.id)}
+const STARTER_GROCERIES=[
+["Apples","Produce"],["Bananas","Produce"],["Lettuce","Produce"],["Tomatoes","Produce"],["Potatoes","Produce"],["Onions","Produce"],
+["Chicken","Meat"],["Ground beef","Meat"],["Bacon","Meat"],["Pork chops","Meat"],["Milk","Dairy & Eggs"],["Eggs","Dairy & Eggs"],["Butter","Dairy & Eggs"],["Cheese","Dairy & Eggs"],
+["Bread","Bread"],["Hamburger buns","Bread"],["Coffee","Pantry"],["Sugar","Pantry"],["Flour","Pantry"],["Rice","Pantry"],["Pasta","Pantry"],["Canned beans","Pantry"],["Soup","Pantry"],
+["Frozen vegetables","Frozen"],["Ice cream","Frozen"],["Bottled water","Drinks"],["Tea","Drinks"],["Soft drinks","Drinks"],["Chips","Snacks"],["Crackers","Snacks"],
+["Paper towels","Household"],["Toilet paper","Household"],["Trash bags","Household"],["Aluminum foil","Household"],["Dish soap","Household"],["Laundry detergent","Household"],
+["Toothpaste","Personal Care"],["Soap","Personal Care"],["Shampoo","Personal Care"]];
+function groceryNote(){
+ let g=notes.find(n=>!n.trash&&n.title==="Grocery List");
+ if(!g){g={id:crypto.randomUUID(),title:"Grocery List",body:"",type:"check",items:STARTER_GROCERIES.map(([t,category])=>({t,category,needed:false,done:false})),pinned:true,trash:false,modified:Date.now()};notes.push(g);persist()}
+ else{g.type="check";g.items=(g.items||[]).map(i=>({t:i.t,category:i.category||"Other",needed:typeof i.needed==="boolean"?i.needed:!i.done,done:!!i.done}));if(!g.items.length){g.items=STARTER_GROCERIES.map(([t,category])=>({t,category,needed:false,done:false}));g.modified=Date.now();persist()}}
+ return g;
+}
+function openGrocery(){saveCurrent();screens("groceryScreen");renderGrocery()}
+function renderGrocery(){
+ const g=groceryNote(),selected=g.items.filter(i=>i.needed);
+ document.getElementById("shoppingList").innerHTML=selected.length?selected.map(i=>{const idx=g.items.indexOf(i);return `<div class="grocery-item"><input type="checkbox" ${i.done?"checked":""} onchange="togglePurchased(${idx})"><span style="${i.done?"text-decoration:line-through;opacity:.55":""}">${esc(i.t)}</span></div>`}).join(""):`<div class="empty" style="padding:18px">Your shopping list is empty.</div>`;
+ const cats=[...new Set(g.items.map(i=>i.category||"Other"))];
+ document.getElementById("masterGrocery").innerHTML=cats.map(cat=>`<div class="grocery-category">${esc(cat)}</div>`+g.items.map((i,idx)=>({i,idx})).filter(x=>(x.i.category||"Other")===cat).sort((a,b)=>a.i.t.localeCompare(b.i.t)).map(({i,idx})=>`<div class="grocery-item"><input type="checkbox" ${i.needed?"checked":""} onchange="toggleNeeded(${idx})"><span>${esc(i.t)}</span><button class="secondary smallbtn" onclick="removeMasterGrocery(${idx})">Remove</button></div>`).join("")).join("");
+}
+function toggleNeeded(i){const g=groceryNote();g.items[i].needed=!g.items[i].needed;if(!g.items[i].needed)g.items[i].done=false;g.modified=Date.now();persist();renderGrocery()}
+function togglePurchased(i){const g=groceryNote();g.items[i].done=!g.items[i].done;g.modified=Date.now();persist();renderGrocery()}
+function clearPurchased(){const g=groceryNote();g.items.forEach(i=>{if(i.needed&&i.done){i.needed=false;i.done=false}});g.modified=Date.now();persist();renderGrocery()}
+function addMasterGrocery(){const el=document.getElementById("newGroceryItem"),t=el.value.trim();if(!t)return;const g=groceryNote();if(g.items.some(i=>i.t.toLowerCase()===t.toLowerCase())){el.value="";return}g.items.push({t,category:document.getElementById("newGroceryCategory").value,needed:false,done:false});g.modified=Date.now();el.value="";persist();renderGrocery()}
+function removeMasterGrocery(i){const g=groceryNote(),item=g.items[i];if(confirm(`Remove "${item.t}" from the permanent grocery list?`)){g.items.splice(i,1);g.modified=Date.now();persist();renderGrocery()}}
+function ideasNote(){let n=notes.find(n=>!n.trash&&n.title==="__IDEAS__");if(!n){n={id:crypto.randomUUID(),title:"__IDEAS__",body:"",type:"check",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);persist()}return n}
+function showIdeas(){saveCurrent();screens("ideasScreen");renderIdeas()}
+function renderIdeas(){const n=ideasNote();document.getElementById("ideasList").innerHTML=n.items.length?n.items.slice().reverse().map((i,r)=>{const idx=n.items.length-1-r;return `<div class="idea-item"><div class="idea-text">${esc(i.t)}<div class="idea-time">${new Date(i.created||n.modified).toLocaleString()}</div></div><button class="secondary smallbtn" onclick="ideaToNote(${idx})">To Note</button><button class="danger smallbtn" onclick="deleteIdea(${idx})">×</button></div>`}).join(""):`<div class="empty" style="padding:24px">No ideas yet.</div>`}
+function addIdea(){const el=document.getElementById("newIdea"),t=el.value.trim();if(!t)return;const n=ideasNote();n.items.push({t,created:Date.now(),done:false});n.modified=Date.now();el.value="";persist();renderIdeas()}
+function deleteIdea(i){const n=ideasNote();if(confirm("Delete this idea?")){n.items.splice(i,1);n.modified=Date.now();persist();renderIdeas()}}
+function ideaToNote(i){const a=ideasNote(),idea=a.items[i];if(!idea)return;const n={id:crypto.randomUUID(),title:"Idea",body:idea.t,type:"text",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);a.items.splice(i,1);a.modified=Date.now();persist();openNote(n.id)}
 function filterPinned(){pinnedOnly=!pinnedOnly;render()}
 function showVoice(){saveCurrent();screens("voiceScreen")}
 function command(c){
@@ -353,6 +400,8 @@ setFont(localStorage.getItem("ocn_font")||"");
 document.getElementById("authPassword").addEventListener("keydown",e=>{if(e.key==="Enter")signIn()});
 document.getElementById("newPassword").addEventListener("keydown",e=>{if(e.key==="Enter")updatePassword()});
 document.getElementById("newItem").addEventListener("keydown",e=>{if(e.key==="Enter")addChecklistItem()});
+document.getElementById("newGroceryItem").addEventListener("keydown",e=>{if(e.key==="Enter")addMasterGrocery()});
+document.getElementById("newIdea").addEventListener("keydown",e=>{if(e.key==="Enter")addIdea()});
 
 async function updatePassword(){
   const password=document.getElementById("newPassword").value;
