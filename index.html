@@ -81,6 +81,14 @@ body.xlarge{font-size:22px}
 .photo-modal{position:fixed;z-index:50;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;padding:18px}
 .photo-modal img{max-width:100%;max-height:88vh;border-radius:12px;box-shadow:0 4px 18px #000}
 .photo-modal .close-photo{position:absolute;top:18px;right:18px;width:48px;height:48px;border-radius:50%;font-size:25px;background:#fff;color:#321}
+.grocery-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 14px 4px;padding:5px;background:#fff9d9;border:1px solid #d5c98e;border-radius:14px;box-shadow:0 2px 8px #4b2d1b22}
+.grocery-tabs button{background:#e9dfb0;color:#392619;padding:10px 6px;font-size:13px}
+.grocery-tabs button.active{background:var(--brown);color:white}
+.recipe-choice{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid #d7c77b}
+.recipe-icon{font-size:28px;line-height:1}
+.recipe-choice b{display:block;margin-bottom:3px}
+.recipe-form textarea{min-height:92px}
+.recipe-coming{margin-top:12px;padding:12px;border-radius:12px;background:#fff3b8;border:1px solid #d5c98e;line-height:1.4}
 </style>
 </head>
 <body>
@@ -150,12 +158,40 @@ body.xlarge{font-size:22px}
 
 
 <section id="groceryScreen" class="screen hidden">
-<div class="card"><h3>🛒 Shopping List</h3><div class="notice">Items selected from the Master List appear here. Check them off as they go in the cart.</div><div id="shoppingList"></div><div class="row"><button class="secondary" onclick="clearPurchased()">Clear Purchased</button></div></div>
-<div class="card"><h3>Master Grocery List</h3><div class="notice">Scan this permanent list and check anything you need. Add your own items anytime.</div>
-<div class="row"><input id="newGroceryItem" placeholder="Add a grocery item…"><button onclick="addMasterGrocery()">Add</button></div>
-<select id="newGroceryCategory"><option>Produce</option><option>Meat</option><option>Dairy & Eggs</option><option>Bread</option><option>Pantry</option><option>Frozen</option><option>Drinks</option><option>Snacks</option><option>Household</option><option>Personal Care</option><option>Other</option></select>
-<input id="groceryPhotoInput" class="hidden" type="file" accept="image/*" onchange="handleGroceryPhoto(event)">
-<div id="masterGrocery"></div></div>
+<div class="grocery-tabs">
+  <button id="groceryTabShopping" class="active" onclick="showGroceryTab('shopping')">Shopping List</button>
+  <button id="groceryTabMaster" onclick="showGroceryTab('master')">Master List</button>
+  <button id="groceryTabRecipes" onclick="showGroceryTab('recipes')">Recipes</button>
+</div>
+
+<div id="groceryShoppingPanel">
+  <div class="card"><h3>🛒 Shopping List</h3><div class="notice">Items selected from the Master List appear here. Check them off as they go in the cart.</div><div id="shoppingList"></div><div class="row"><button class="secondary" onclick="clearPurchased()">Clear Purchased</button></div></div>
+</div>
+
+<div id="groceryMasterPanel" class="hidden">
+  <div class="card"><h3>Master Grocery List</h3><div class="notice">Scan this permanent list and check anything you need. Add your own items anytime.</div>
+  <div class="row"><input id="newGroceryItem" placeholder="Add a grocery item…"><button onclick="addMasterGrocery()">Add</button></div>
+  <select id="newGroceryCategory"><option>Produce</option><option>Meat</option><option>Dairy & Eggs</option><option>Bread</option><option>Pantry</option><option>Frozen</option><option>Drinks</option><option>Snacks</option><option>Household</option><option>Personal Care</option><option>Other</option></select>
+  <input id="groceryPhotoInput" class="hidden" type="file" accept="image/*" onchange="handleGroceryPhoto(event)">
+  <div id="masterGrocery"></div></div>
+</div>
+
+<div id="groceryRecipesPanel" class="hidden">
+  <div class="card">
+    <h3>🍳 Find Recipe Ideas</h3>
+    <div class="notice">Ask for meal ideas by ingredients, cuisine, or whatever sounds good tonight.</div>
+    <div class="recipe-choice"><div class="recipe-icon">🥕</div><div><b>Use My Ingredients</b><span class="notice">Tell it what food you already have.</span></div></div>
+    <div class="recipe-choice"><div class="recipe-icon">🌎</div><div><b>Choose a Cuisine</b><span class="notice">Japanese, Italian, Mexican, Southern, or anything else.</span></div></div>
+    <div class="recipe-choice"><div class="recipe-icon">👨‍🍳</div><div><b>Just Ask</b><span class="notice">For example: “Give me 5 simple Japanese-style meals for tonight.”</span></div></div>
+  </div>
+
+  <div class="card recipe-form">
+    <h3>What sounds good?</h3>
+    <textarea id="recipeRequest" placeholder="Example: I have chicken, rice, cabbage and eggs. Give me 5 Japanese-style meals that take about 30 minutes."></textarea>
+    <div class="row"><button type="button" onclick="recipeStageOneMessage()">Find Recipes</button></div>
+    <div id="recipeStageOneStatus" class="recipe-coming">The Recipes page is ready. The AI connection is the next step, after we make sure these new Grocery tabs work correctly.</div>
+  </div>
+</div>
 </section>
 <section id="ideasScreen" class="screen hidden">
 <div class="card"><h3>💡 Ideas</h3><div class="notice">Keep related thoughts together under one idea topic.</div>
@@ -443,7 +479,24 @@ function groceryNote(){
  else{g.type="check";g.items=(g.items||[]).map(i=>({t:i.t,category:i.category||"Other",needed:typeof i.needed==="boolean"?i.needed:!i.done,done:!!i.done,photoPath:i.photoPath||""}));if(!g.items.length){g.items=STARTER_GROCERIES.map(([t,category])=>({t,category,needed:false,done:false,photoPath:""}));g.modified=Date.now();persist()}}
  return g;
 }
-function openGrocery(){saveCurrent();screens("groceryScreen");renderGrocery()}
+let groceryTab="shopping";
+function openGrocery(){saveCurrent();screens("groceryScreen");showGroceryTab(groceryTab);renderGrocery()}
+function showGroceryTab(tab){
+ groceryTab=tab;
+ document.getElementById("groceryShoppingPanel").classList.toggle("hidden",tab!=="shopping");
+ document.getElementById("groceryMasterPanel").classList.toggle("hidden",tab!=="master");
+ document.getElementById("groceryRecipesPanel").classList.toggle("hidden",tab!=="recipes");
+ document.getElementById("groceryTabShopping").classList.toggle("active",tab==="shopping");
+ document.getElementById("groceryTabMaster").classList.toggle("active",tab==="master");
+ document.getElementById("groceryTabRecipes").classList.toggle("active",tab==="recipes");
+}
+function recipeStageOneMessage(){
+ const request=document.getElementById("recipeRequest").value.trim();
+ const status=document.getElementById("recipeStageOneStatus");
+ status.textContent=request
+   ?"Good — the Recipes screen is working. The next step will connect this request to AI."
+   :"Type what kind of meal you want first. The AI connection comes in the next step.";
+}
 function renderGrocery(){
  const g=groceryNote(),selected=g.items.filter(i=>i.needed);
  document.getElementById("shoppingList").innerHTML=selected.length?selected.map(i=>{const idx=g.items.indexOf(i);return `<div class="grocery-item"><input type="checkbox" ${i.done?"checked":""} onchange="togglePurchased(${idx})">${i.photoPath?`<img class="photo-thumb" data-photo-path="${esc(i.photoPath)}" alt="${esc(i.t)}" onclick="showPhotoModal(this.src)">`:""}<span style="${i.done?"text-decoration:line-through;opacity:.55":""}">${esc(i.t)}</span></div>`}).join(""):`<div class="empty" style="padding:18px">Your shopping list is empty.</div>`;
@@ -454,7 +507,7 @@ function renderGrocery(){
 function toggleNeeded(i){const g=groceryNote();g.items[i].needed=!g.items[i].needed;if(!g.items[i].needed)g.items[i].done=false;g.modified=Date.now();persist();renderGrocery()}
 function togglePurchased(i){const g=groceryNote();g.items[i].done=!g.items[i].done;g.modified=Date.now();persist();renderGrocery()}
 function clearPurchased(){const g=groceryNote();g.items.forEach(i=>{if(i.needed&&i.done){i.needed=false;i.done=false}});g.modified=Date.now();persist();renderGrocery()}
-function addMasterGrocery(){const el=document.getElementById("newGroceryItem"),t=el.value.trim();if(!t)return;const g=groceryNote();const duplicate=g.items.some(i=>i.t.trim().toLowerCase()===t.toLowerCase());if(duplicate&&!confirm(`"${t}" is already on your Master Grocery List.\n\nAdd it again anyway?`)){el.focus();return}g.items.push({t,category:document.getElementById("newGroceryCategory").value,needed:false,done:false,photoPath:""});g.modified=Date.now();el.value="";persist();renderGrocery()}
+function addMasterGrocery(){const el=document.getElementById("newGroceryItem"),t=el.value.trim();if(!t)return;const g=groceryNote();const duplicate=g.items.some(i=>i.t.trim().toLowerCase()===t.toLowerCase());if(duplicate&&!confirm(`"${t}" is already on your Master Grocery List. Add it again anyway?`)){el.value="";return}g.items.push({t,category:document.getElementById("newGroceryCategory").value,needed:false,done:false,photoPath:""});g.modified=Date.now();el.value="";persist();renderGrocery()}
 function pickGroceryPhoto(i){groceryPhotoIndex=i;const input=document.getElementById("groceryPhotoInput");input.value="";input.click()}
 async function handleGroceryPhoto(event){
  const file=event.target.files?.[0],idx=groceryPhotoIndex;groceryPhotoIndex=null;if(!file||idx===null)return;
@@ -576,7 +629,7 @@ boot();
 if("serviceWorker" in navigator){
   window.addEventListener("load",async()=>{
     try{
-      const reg=await navigator.serviceWorker.register("./service-worker.js?v=6",{updateViaCache:"none"});
+      const reg=await navigator.serviceWorker.register("./service-worker.js?v=7",{updateViaCache:"none"});
       await reg.update().catch(()=>{});
       let reloading=false;
       navigator.serviceWorker.addEventListener("controllerchange",()=>{
