@@ -454,7 +454,7 @@ function renderGrocery(){
 function toggleNeeded(i){const g=groceryNote();g.items[i].needed=!g.items[i].needed;if(!g.items[i].needed)g.items[i].done=false;g.modified=Date.now();persist();renderGrocery()}
 function togglePurchased(i){const g=groceryNote();g.items[i].done=!g.items[i].done;g.modified=Date.now();persist();renderGrocery()}
 function clearPurchased(){const g=groceryNote();g.items.forEach(i=>{if(i.needed&&i.done){i.needed=false;i.done=false}});g.modified=Date.now();persist();renderGrocery()}
-function addMasterGrocery(){const el=document.getElementById("newGroceryItem"),t=el.value.trim();if(!t)return;const g=groceryNote();if(g.items.some(i=>i.t.toLowerCase()===t.toLowerCase())){el.value="";return}g.items.push({t,category:document.getElementById("newGroceryCategory").value,needed:false,done:false,photoPath:""});g.modified=Date.now();el.value="";persist();renderGrocery()}
+function addMasterGrocery(){const el=document.getElementById("newGroceryItem"),t=el.value.trim();if(!t)return;const g=groceryNote();const duplicate=g.items.some(i=>i.t.trim().toLowerCase()===t.toLowerCase());if(duplicate&&!confirm(`"${t}" is already on your Master Grocery List.\n\nAdd it again anyway?`)){el.focus();return}g.items.push({t,category:document.getElementById("newGroceryCategory").value,needed:false,done:false,photoPath:""});g.modified=Date.now();el.value="";persist();renderGrocery()}
 function pickGroceryPhoto(i){groceryPhotoIndex=i;const input=document.getElementById("groceryPhotoInput");input.value="";input.click()}
 async function handleGroceryPhoto(event){
  const file=event.target.files?.[0],idx=groceryPhotoIndex;groceryPhotoIndex=null;if(!file||idx===null)return;
