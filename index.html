@@ -188,8 +188,8 @@ body.xlarge{font-size:22px}
   <div class="card recipe-form">
     <h3>What sounds good?</h3>
     <textarea id="recipeRequest" placeholder="Example: I have chicken, rice, cabbage and eggs. Give me 5 Japanese-style meals that take about 30 minutes."></textarea>
-    <div class="row"><button type="button" onclick="recipeStageOneMessage()">Find Recipes</button></div>
-    <div id="recipeStageOneStatus" class="recipe-coming">The Recipes page is ready. The AI connection is the next step, after we make sure these new Grocery tabs work correctly.</div>
+    <div class="row"><button id="findRecipesBtn" type="button" onclick="findRecipes()">Find Recipes</button></div>
+    <div id="recipeStageOneStatus" class="recipe-coming">Tell me what you have or what sounds good, then tap Find Recipes.</div>
   </div>
 </div>
 </section>
@@ -490,12 +490,27 @@ function showGroceryTab(tab){
  document.getElementById("groceryTabMaster").classList.toggle("active",tab==="master");
  document.getElementById("groceryTabRecipes").classList.toggle("active",tab==="recipes");
 }
-function recipeStageOneMessage(){
+async function findRecipes(){
  const request=document.getElementById("recipeRequest").value.trim();
  const status=document.getElementById("recipeStageOneStatus");
- status.textContent=request
-   ?"Good — the Recipes screen is working. The next step will connect this request to AI."
-   :"Type what kind of meal you want first. The AI connection comes in the next step.";
+ const btn=document.getElementById("findRecipesBtn");
+ if(!request){status.textContent="Type what kind of meal you want first.";return}
+ if(!currentUser){status.textContent="Please sign in before asking for recipes.";return}
+ btn.disabled=true;
+ btn.textContent="Finding Recipes…";
+ status.textContent="Finding recipe ideas…";
+ try{
+   const {data,error}=await db.functions.invoke("recipe-suggestions",{body:{request}});
+   if(error)throw error;
+   if(!data?.recipe)throw new Error(data?.error||"No recipe response was returned.");
+   status.textContent=data.recipe;
+ }catch(e){
+   console.error("Recipe request failed:",e);
+   status.textContent="I couldn't get recipe ideas right now. Please try again.";
+ }finally{
+   btn.disabled=false;
+   btn.textContent="Find Recipes";
+ }
 }
 function renderGrocery(){
  const g=groceryNote(),selected=g.items.filter(i=>i.needed);
@@ -629,7 +644,7 @@ boot();
 if("serviceWorker" in navigator){
   window.addEventListener("load",async()=>{
     try{
-      const reg=await navigator.serviceWorker.register("./service-worker.js?v=7",{updateViaCache:"none"});
+      const reg=await navigator.serviceWorker.register("./service-worker.js?v=8",{updateViaCache:"none"});
       await reg.update().catch(()=>{});
       let reloading=false;
       navigator.serviceWorker.addEventListener("controllerchange",()=>{
