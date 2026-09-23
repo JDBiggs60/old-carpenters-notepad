@@ -88,7 +88,10 @@ body.xlarge{font-size:22px}
 .recipe-icon{font-size:28px;line-height:1}
 .recipe-choice b{display:block;margin-bottom:3px}
 .recipe-form textarea{min-height:92px}
-.recipe-coming{margin-top:12px;padding:12px;border-radius:12px;background:#fff3b8;border:1px solid #d5c98e;line-height:1.4}
+.recipe-coming{margin-top:12px;padding:14px;border-radius:12px;background:#fff3b8;border:1px solid #d5c98e;line-height:1.55}
+.recipe-coming h2,.recipe-coming h3,.recipe-coming h4{font-family:Georgia,serif;color:var(--brown);margin:14px 0 7px}
+.recipe-coming h2{font-size:22px}.recipe-coming h3{font-size:19px}.recipe-coming h4{font-size:17px}
+.recipe-coming strong{color:#3d281b}
 </style>
 </head>
 <body>
@@ -490,6 +493,16 @@ function showGroceryTab(tab){
  document.getElementById("groceryTabMaster").classList.toggle("active",tab==="master");
  document.getElementById("groceryTabRecipes").classList.toggle("active",tab==="recipes");
 }
+function formatRecipeText(text){
+ let s=esc(text||"");
+ s=s.replace(/^###\s+(.+)$/gm,"<h4>$1</h4>");
+ s=s.replace(/^##\s+(.+)$/gm,"<h3>$1</h3>");
+ s=s.replace(/^#\s+(.+)$/gm,"<h2>$1</h2>");
+ s=s.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>");
+ s=s.replace(/\n/g,"<br>");
+ return s;
+}
+
 async function findRecipes(){
  const request=document.getElementById("recipeRequest").value.trim();
  const status=document.getElementById("recipeStageOneStatus");
@@ -503,7 +516,7 @@ async function findRecipes(){
    const {data,error}=await db.functions.invoke("recipe-suggestions",{body:{request}});
    if(error)throw error;
    if(!data?.recipe)throw new Error(data?.error||"No recipe response was returned.");
-   status.textContent=data.recipe;
+   status.innerHTML=formatRecipeText(data.recipe);
  }catch(e){
    console.error("Recipe request failed:",e);
    status.textContent="I couldn't get recipe ideas right now. Please try again.";
@@ -644,7 +657,7 @@ boot();
 if("serviceWorker" in navigator){
   window.addEventListener("load",async()=>{
     try{
-      const reg=await navigator.serviceWorker.register("./service-worker.js?v=8",{updateViaCache:"none"});
+      const reg=await navigator.serviceWorker.register("./service-worker.js?v=9",{updateViaCache:"none"});
       await reg.update().catch(()=>{});
       let reloading=false;
       navigator.serviceWorker.addEventListener("controllerchange",()=>{
