@@ -1,1625 +1,673 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Electronics Inventory</title>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#4b2d1b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Old Carpenter's Notepad">
+<title>Old Carpenter's Notepad</title>
 <style>
-* { box-sizing: border-box; }
+:root{--brown:#4b2d1b;--paper:#fff2a8;--cream:#fff8dc;--ink:#2f2118;--line:#d7c77b;--red:#b44b3d}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#eee;color:var(--ink)}
+.app{max-width:520px;min-height:100vh;margin:auto;background:var(--paper);background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 31px,var(--line) 32px);padding-bottom:92px}
+header{position:sticky;top:0;z-index:5;background:var(--brown);color:white;padding:18px 16px 14px;box-shadow:0 2px 7px #0004}
+header h1{font-family:Georgia,serif;margin:0 0 10px;font-size:25px;text-align:center}
+.search{display:flex;gap:8px}
+input,textarea,select,button{font:inherit}
+input,textarea,select{width:100%;border:1px solid #bcae76;border-radius:12px;padding:12px;background:#fffdf2;color:#222}
+textarea{min-height:210px;resize:vertical;line-height:1.5}
+button{border:0;border-radius:12px;padding:11px 14px;background:var(--brown);color:white;font-weight:650;cursor:pointer}
+button.secondary{background:#e9dfb0;color:#392619}
+button.danger{background:#9f3f35}
+button:disabled{opacity:.55;cursor:not-allowed}
+.toolbar{display:flex;gap:8px;padding:12px 14px;overflow:auto;background:#fff6c7cc;backdrop-filter:blur(4px)}
+.card{margin:12px 14px;padding:14px;border-radius:14px;background:#fff9d9dd;box-shadow:0 2px 8px #4b2d1b22;border:1px solid #d5c98e}
+.card h3{margin:0 0 6px;font-family:Georgia,serif;font-size:20px}
+.meta{font-size:12px;opacity:.65}
+.preview{margin-top:7px;white-space:pre-wrap}
+.fab{position:fixed;right:max(22px,calc((100vw - 520px)/2 + 22px));bottom:78px;width:58px;height:58px;border-radius:50%;font-size:31px;box-shadow:0 4px 12px #0005}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);display:grid;grid-template-columns:repeat(4,1fr);background:#fff9dc;border-top:1px solid #cdbf83;padding:7px 5px calc(7px + env(safe-area-inset-bottom))}
+nav button{background:transparent;color:#51351f;padding:6px;font-size:12px}
+nav b{display:block;font-size:21px}
+.hidden{display:none!important}
+.screen{padding-bottom:8px}
+.editor{padding:14px}
+.editor .row,.row{display:flex;gap:8px;margin:9px 0}
+.title{font-weight:750;font-size:18px}
+.checkitem{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #d7c77b}
+.checkitem input[type=checkbox]{width:22px;height:22px}
+.checkitem span{flex:1}
+.voicebox{text-align:center;padding:22px 14px}
+.mic{width:92px;height:92px;border-radius:50%;font-size:42px;margin:12px}
+.status{min-height:44px;padding:10px;background:#fff8d5;border-radius:10px}
+.help{font-size:14px;line-height:1.45}
+.empty{text-align:center;padding:45px 20px;opacity:.7}
+body.large{font-size:19px}
+body.xlarge{font-size:22px}
+.authwrap{max-width:520px;min-height:100vh;margin:auto;background:#fff8dc;padding:28px 18px;color:#2f2118}
+.authcard{margin-top:40px;padding:20px;border-radius:16px;background:#fff9d9;border:1px solid #d5c98e;box-shadow:0 2px 8px #4b2d1b22}
+.authcard h2{font-family:Georgia,serif;margin-top:0;text-align:center}
+.authcard .row{display:flex;gap:8px}
+.authmsg{min-height:24px;margin-top:10px;font-size:14px}
+.syncbar{font-size:12px;padding:6px 14px;background:#fff6c7;border-bottom:1px solid #d5c98e;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.passwordrow{display:flex;gap:8px}
+.passwordrow button{white-space:nowrap}
+.notice{font-size:13px;line-height:1.35}
+@media(min-width:700px){.app,.authwrap{box-shadow:0 0 24px #0002}}
 
-body {
-    margin: 0;
-    font-family: Arial, Helvetica, sans-serif;
-    background: #f2f4f7;
-    color: #222;
-}
-
-header {
-    background: #1f2937;
-    color: white;
-    padding: 22px 18px;
-    text-align: center;
-}
-
-header h1 { margin: 0; font-size: 28px; }
-header p { margin: 7px 0 0; color: #d1d5db; }
-
-.container {
-    max-width: 1100px;
-    margin: auto;
-    padding: 18px;
-}
-
-.stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 18px;
-}
-
-.stat {
-    background: white;
-    border-radius: 10px;
-    padding: 16px;
-    text-align: center;
-    box-shadow: 0 2px 7px rgba(0,0,0,.08);
-}
-
-.stat strong {
-    display: block;
-    font-size: 25px;
-    margin-bottom: 4px;
-}
-
-.panel {
-    background: white;
-    border-radius: 12px;
-    padding: 18px;
-    margin-bottom: 18px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.08);
-}
-
-.panel h2 { margin-top: 0; }
-
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 13px;
-}
-
-.full { grid-column: 1 / -1; }
-
-label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-input,
-select,
-textarea {
-    width: 100%;
-    padding: 11px;
-    border: 1px solid #cbd5e1;
-    border-radius: 7px;
-    font-size: 16px;
-}
-
-textarea {
-    min-height: 85px;
-    resize: vertical;
-}
-
-button {
-    border: none;
-    border-radius: 7px;
-    padding: 11px 17px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-.primary { background: #2563eb; color: white; }
-.secondary { background: #e5e7eb; color: #111827; }
-.danger { background: #dc2626; color: white; }
-
-.buttons {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-    flex-wrap: wrap;
-}
-
-.photo-preview {
-    display: none;
-    max-width: 220px;
-    max-height: 180px;
-    object-fit: contain;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    margin-top: 10px;
-}
-
-.search-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-.search-row input { flex: 1; }
-
-.barcode-row {
-    display: flex;
-    gap: 8px;
-    align-items: stretch;
-}
-
-.barcode-row input { flex: 1; min-width: 0; }
-.barcode-row button { white-space: nowrap; }
-
-.scanner-box {
-    display: none;
-    margin-top: 10px;
-    padding: 12px;
-    border: 1px solid #cbd5e1;
-    border-radius: 9px;
-    background: #f8fafc;
-}
-
-.scanner-box video {
-    width: 100%;
-    max-height: 320px;
-    object-fit: cover;
-    border-radius: 8px;
-    background: #111827;
-}
-
-.scanner-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 9px;
-}
-
-.lookup-hint,
-.location-hint {
-    margin-top: 7px;
-    color: #64748b;
-    font-size: 13px;
-}
-
-.inventory-grid,
-.location-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
-}
-
-.item-card,
-.location-card {
-    border: 1px solid #d7dce3;
-    border-radius: 10px;
-    padding: 14px;
-    background: #fafafa;
-}
-
-.item-card img {
-    width: 100%;
-    height: 180px;
-    object-fit: contain;
-    background: white;
-    border-radius: 8px;
-    margin-bottom: 10px;
-}
-
-.item-card h3,
-.location-card h3 {
-    margin: 0 0 8px;
-}
-
-.item-info {
-    line-height: 1.6;
-    font-size: 14px;
-}
-
-.badge {
-    display: inline-block;
-    background: #e0e7ff;
-    color: #3730a3;
-    padding: 4px 8px;
-    border-radius: 20px;
-    font-size: 12px;
-    margin-bottom: 8px;
-}
-
-.warning {
-    display: none;
-    background: #fff7ed;
-    border: 2px solid #f97316;
-    color: #9a3412;
-    padding: 14px;
-    border-radius: 9px;
-    margin-top: 15px;
-}
-
-.warning strong {
-    display: block;
-    font-size: 18px;
-    margin-bottom: 5px;
-}
-
-.empty {
-    text-align: center;
-    color: #6b7280;
-    padding: 35px 10px;
-}
-
-.auth-wrap {
-    max-width: 520px;
-    margin: 32px auto;
-    padding: 0 18px;
-}
-
-.auth-card {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.08);
-}
-
-.auth-card h2 { margin-top: 0; }
-
-.auth-actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 14px;
-}
-
-.auth-message {
-    margin-top: 12px;
-    color: #b91c1c;
-    min-height: 20px;
-}
-
-.app-hidden { display: none; }
-
-.sync-bar {
-    max-width: 1100px;
-    margin: 12px auto 0;
-    padding: 0 18px;
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    font-size: 14px;
-    color: #475569;
-}
-
-.sync-good { color: #166534; }
-.sync-bad { color: #b91c1c; }
-
-.location-tools {
-    background: #f8fafc;
-    border: 1px solid #dbe3ec;
-    border-radius: 10px;
-    padding: 14px;
-}
-
-.location-builder {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-top: 10px;
-}
-
-.location-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 10px;
-}
-
-.location-card .count {
-    color: #475569;
-    line-height: 1.6;
-}
-
-.active-location-filter {
-    display: none;
-    background: #eff6ff;
-    border: 1px solid #93c5fd;
-    color: #1e3a8a;
-    border-radius: 8px;
-    padding: 10px 12px;
-    margin-bottom: 12px;
-}
-
-@media (max-width: 700px) {
-    .form-grid,
-    .inventory-grid,
-    .location-grid,
-    .location-builder {
-        grid-template-columns: 1fr;
-    }
-
-    .stats { grid-template-columns: 1fr; }
-
-    .barcode-row {
-        flex-direction: column;
-    }
-}
+.grocery-item,.idea-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #d7c77b}
+.grocery-item input[type=checkbox]{width:24px;height:24px;flex:0 0 auto}.grocery-item span,.idea-text{flex:1}
+.grocery-category{margin:15px 0 4px;font-weight:800;color:#4b2d1b}.smallbtn{padding:7px 9px;font-size:12px}
+.idea-time{font-size:11px;opacity:.6;margin-top:3px}.notice{font-size:13px;line-height:1.4;margin-bottom:8px}
+.idea-topic-btn{flex:1;text-align:left;border:0;background:transparent;color:inherit;padding:8px;display:flex;flex-direction:column;gap:4px}.idea-topic-btn span{font-size:12px;opacity:.65;font-weight:400}
+.photo-thumb{width:58px;height:58px;object-fit:cover;border-radius:10px;border:1px solid #c9b979;background:#fff;flex:0 0 auto;cursor:pointer}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.photo-card{position:relative;border-radius:12px;overflow:hidden;background:#fff8d5;border:1px solid #c9b979}
+.photo-card img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;cursor:pointer}
+.photo-card button{position:absolute;top:5px;right:5px;padding:5px 8px;border-radius:9px;background:#9f3f35}
+.photo-caption{border:0;border-top:1px solid #d7c77b;border-radius:0;background:#fffdf2;padding:9px 8px;font-size:12px}
+.idea-section-title{font-weight:800;color:#4b2d1b;margin:16px 0 7px}
+.idea-description{min-height:120px}
+.idea-check-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #d7c77b}
+.idea-check-item input[type=checkbox]{width:24px;height:24px;flex:0 0 auto}
+.idea-check-item span{flex:1}
+.photo-placeholder{width:58px;height:58px;border-radius:10px;border:1px dashed #bcae76;display:flex;align-items:center;justify-content:center;background:#fff8d5;flex:0 0 auto;font-size:23px;opacity:.7}
+.photo-note{font-size:12px;opacity:.7;align-self:center}
+.photo-modal{position:fixed;z-index:50;inset:0;background:#000d;display:flex;align-items:center;justify-content:center;padding:18px}
+.photo-modal img{max-width:100%;max-height:88vh;border-radius:12px;box-shadow:0 4px 18px #000}
+.photo-modal .close-photo{position:absolute;top:18px;right:18px;width:48px;height:48px;border-radius:50%;font-size:25px;background:#fff;color:#321}
+.grocery-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 14px 4px;padding:5px;background:#fff9d9;border:1px solid #d5c98e;border-radius:14px;box-shadow:0 2px 8px #4b2d1b22}
+.grocery-tabs button{background:#e9dfb0;color:#392619;padding:10px 6px;font-size:13px}
+.grocery-tabs button.active{background:var(--brown);color:white}
+.recipe-choice{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid #d7c77b}
+.recipe-icon{font-size:28px;line-height:1}
+.recipe-choice b{display:block;margin-bottom:3px}
+.recipe-form textarea{min-height:92px}
+.recipe-coming{margin-top:12px;padding:14px;border-radius:12px;background:#fff3b8;border:1px solid #d5c98e;line-height:1.55}
+.recipe-coming h2,.recipe-coming h3,.recipe-coming h4{font-family:Georgia,serif;color:var(--brown);margin:14px 0 7px}
+.recipe-coming h2{font-size:22px}.recipe-coming h3{font-size:19px}.recipe-coming h4{font-size:17px}
+.recipe-coming strong{color:#3d281b}
 </style>
 </head>
-
 <body>
 
-<div id="authWrap" class="auth-wrap">
-    <div class="auth-card">
-        <h2>Electronics Inventory Sign In</h2>
-        <p>Sign in so the same inventory appears on your phone and computer.</p>
-
-        <label>Email</label>
-        <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com">
-
-        <label style="margin-top:12px;">Password</label>
-        <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password">
-
-        <div class="auth-actions">
-            <button class="primary" onclick="signIn()">Sign In</button>
-            <button class="secondary" onclick="signUp()">Create Account</button>
-        </div>
-
-        <div id="authMessage" class="auth-message"></div>
+<div id="authWrap" class="authwrap hidden">
+  <div class="authcard">
+    <h2>Old Carpenter's Notepad</h2>
+    <p>Sign in to keep your notes synced between devices.</p>
+    <input id="authEmail" type="email" autocomplete="email" placeholder="Email address">
+    <div style="height:10px"></div>
+    <div class="passwordrow">
+      <input id="authPassword" type="password" autocomplete="current-password" placeholder="Password">
+      <button id="showAuthPassword" type="button" class="secondary" onclick="togglePassword('authPassword','showAuthPassword')">👁 Show</button>
     </div>
+    <div class="row">
+      <button id="signInBtn" onclick="signIn()">Sign In</button>
+      <button class="secondary" onclick="signUp()">Create Account</button>
+    </div>
+    <div class="row">
+      <button class="secondary" onclick="requestPasswordReset()">Forgot password?</button>
+    </div>
+
+    <div id="resetBox" class="hidden">
+      <p><b>Choose a new password</b></p>
+      <div class="passwordrow">
+        <input id="newPassword" type="password" autocomplete="new-password" placeholder="Enter new password">
+        <button id="showNewPassword" type="button" class="secondary" onclick="togglePassword('newPassword','showNewPassword')">👁 Show</button>
+      </div>
+      <div class="row"><button type="button" onclick="updatePassword()">Set New Password</button></div>
+    </div>
+    <div id="authMsg" class="authmsg"></div>
+  </div>
 </div>
 
-<div id="appRoot" class="app-hidden">
-
+<div id="appRoot" class="app hidden">
 <header>
-    <h1>Electronics Inventory</h1>
-    <p>Know what you own before you buy another one.</p>
+  <h1>Old Carpenter's Notepad</h1>
+  <div class="search"><input id="search" placeholder="Search notes…"><button aria-label="Ideas" onclick="showIdeas()">💡</button></div>
 </header>
+<div class="syncbar"><span id="syncStatus">Starting…</span><button class="secondary" style="padding:4px 8px;font-size:12px" onclick="signOut()">Sign out</button></div>
 
-<div class="sync-bar">
-    <div id="syncStatus">Connecting to cloud…</div>
-    <button class="secondary" onclick="signOut()">Sign Out</button>
+<section id="notesScreen" class="screen">
+<div class="toolbar"><button onclick="newNote()">+ Quick Note</button><button class="secondary" onclick="newChecklist()">☑ Checklist</button><button id="pinnedBtn" class="secondary" onclick="filterPinned()">📌 Pinned</button></div>
+<div id="notes"></div>
+<button class="fab" onclick="newNote()" aria-label="New note">+</button>
+</section>
+
+<section id="editorScreen" class="screen hidden">
+<div class="editor">
+<div class="row"><button class="secondary" onclick="saveAndHome()">← Notes</button><button id="pinBtn" class="secondary" onclick="togglePin()">📌 Pin</button><button class="danger" onclick="trashCurrent()">Trash</button></div>
+<input id="noteTitle" class="title" placeholder="Note title">
+<div id="textEditor"><textarea id="noteBody" placeholder="Start writing…"></textarea></div>
+<div id="checkEditor" class="hidden"><div id="checkItems"></div><div class="row"><input id="newItem" placeholder="Add an item…"><button onclick="addChecklistItem()">Add</button></div></div>
+<div class="meta" id="savedMsg">Autosaves as you type.</div>
+</div>
+</section>
+
+<section id="voiceScreen" class="screen hidden">
+<div class="voicebox">
+<h2>Voice Command</h2><p>Try: <b>“Add a can of beans to my grocery list.”</b></p>
+<button class="mic" onclick="listen()">🎙</button>
+<div class="status" id="voiceStatus">Tap the microphone and speak, or type a command below.</div>
+<div class="row"><input id="commandText" placeholder="Type a command…"><button onclick="runTypedCommand()">Do it</button></div>
+<div class="card help"><b>Examples</b><br>Add milk to my grocery list<br>Create a note called Pen Blank Ideas<br>Find my note about plasma cutter<br>Add a to-do call the plumber</div>
+</div>
+</section>
+
+
+<section id="groceryScreen" class="screen hidden">
+<div class="grocery-tabs">
+  <button id="groceryTabShopping" class="active" onclick="showGroceryTab('shopping')">Shopping List</button>
+  <button id="groceryTabMaster" onclick="showGroceryTab('master')">Master List</button>
+  <button id="groceryTabRecipes" onclick="showGroceryTab('recipes')">Recipes</button>
 </div>
 
-<div class="container">
-
-    <div class="stats">
-        <div class="stat">
-            <strong id="uniqueCount">0</strong>
-            Different Items
-        </div>
-
-        <div class="stat">
-            <strong id="totalCount">0</strong>
-            Total Pieces
-        </div>
-
-        <div class="stat">
-            <strong id="locationCount">0</strong>
-            Locations
-        </div>
-    </div>
-
-    <div class="panel">
-        <h2>Add Electronic Item</h2>
-
-        <div class="form-grid">
-
-            <div class="full">
-                <label>Photo</label>
-                <input type="file" id="photo" accept="image/*">
-                <img id="photoPreview" class="photo-preview">
-            </div>
-
-            <div>
-                <label>Item Name *</label>
-                <input id="itemName" placeholder="Example: Stepper Motor Driver">
-            </div>
-
-            <div>
-                <label>Category</label>
-                <select id="category">
-                    <option value="">Choose category</option>
-                    <option>Arduino / Microcontroller</option>
-                    <option>Control Board</option>
-                    <option>Stepper Motor</option>
-                    <option>Motor Driver</option>
-                    <option>Power Supply</option>
-                    <option>Relay</option>
-                    <option>Switch</option>
-                    <option>Sensor</option>
-                    <option>Display</option>
-                    <option>Connector</option>
-                    <option>Wire / Cable</option>
-                    <option>Electronic Component</option>
-                    <option>CNC Electronics</option>
-                    <option>3D Printer Electronics</option>
-                    <option>Other</option>
-                </select>
-            </div>
-
-            <div>
-                <label>Manufacturer</label>
-                <input id="manufacturer" placeholder="Example: StepperOnline">
-            </div>
-
-            <div>
-                <label>Model / Part Number</label>
-                <input id="partNumber" placeholder="Example: DM542T">
-            </div>
-
-            <div>
-                <label>UPC / Barcode Number</label>
-                <div class="barcode-row">
-                    <input id="barcode" inputmode="numeric" autocomplete="off" placeholder="Scan or enter barcode">
-                    <button type="button" class="secondary" onclick="startBarcodeScanner()">Scan Barcode</button>
-                </div>
-
-                <div id="scannerBox" class="scanner-box">
-                    <video id="barcodeVideo" playsinline muted></video>
-                    <div class="scanner-actions">
-                        <button type="button" class="secondary" onclick="stopBarcodeScanner()">Stop Camera</button>
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <label>Quantity</label>
-                <input id="quantity" type="number" min="1" value="1">
-            </div>
-
-            <div class="full location-tools">
-                <label>Storage Location *</label>
-
-                <select id="existingLocation" onchange="useExistingLocation()">
-                    <option value="">Choose an existing location</option>
-                </select>
-
-                <div class="location-hint">
-                    Pick a location you have already used, or build a new one below.
-                </div>
-
-                <div class="location-builder">
-                    <input id="locationArea" placeholder="Cabinet / Box / Shelf, e.g. Cabinet A">
-                    <input id="locationSection" placeholder="Drawer / Shelf, e.g. Drawer 7">
-                    <input id="locationBin" placeholder="Bin / Section, e.g. Bin 3">
-                </div>
-
-                <div class="location-actions">
-                    <button type="button" class="secondary" onclick="buildLocation()">Use This Location</button>
-                    <button type="button" class="secondary" onclick="clearLocationBuilder()">Clear Location Builder</button>
-                </div>
-
-                <input
-                    id="location"
-                    style="margin-top:10px;"
-                    placeholder="Final location, e.g. Cabinet A - Drawer 7 - Bin 3"
-                    oninput="syncBuilderFromTypedLocation()"
-                >
-
-                <div class="location-hint">
-                    The final location above is what will be saved with the item. You can also type it directly.
-                </div>
-            </div>
-
-            <div>
-                <label>Condition</label>
-                <select id="condition">
-                    <option>New</option>
-                    <option>Used</option>
-                    <option>Unknown</option>
-                    <option>For Parts</option>
-                </select>
-            </div>
-
-            <div class="full">
-                <label>Notes</label>
-                <textarea id="notes" placeholder="Voltage, specifications, what it came from, project ideas, etc."></textarea>
-            </div>
-
-            <div class="full">
-                <button type="button" class="secondary" onclick="lookUpPartOnline()">Look Up Part Online</button>
-                <div class="lookup-hint">
-                    Searches the web using the barcode, manufacturer, model/part number, and item name already in the form.
-                </div>
-            </div>
-
-        </div>
-
-        <div id="duplicateWarning" class="warning"></div>
-
-        <div class="buttons">
-            <button class="primary" onclick="saveItem()">Save Item</button>
-            <button class="secondary" onclick="clearForm()">Clear</button>
-        </div>
-    </div>
-
-    <div class="panel">
-        <h2>Storage Locations</h2>
-        <p class="location-hint" style="margin-top:-4px;margin-bottom:14px;">
-            This list is built automatically from the locations already used by your inventory.
-        </p>
-
-        <div id="locationGrid" class="location-grid"></div>
-    </div>
-
-    <div class="panel">
-        <h2>My Electronics</h2>
-
-        <div id="activeLocationFilter" class="active-location-filter"></div>
-
-        <div class="search-row">
-            <input
-                id="search"
-                placeholder="Search name, part number, location, category..."
-                oninput="renderInventory()"
-            >
-            <button class="secondary" onclick="clearInventoryFilter()">Show All</button>
-        </div>
-
-        <div id="inventory" class="inventory-grid"></div>
-    </div>
-
+<div id="groceryShoppingPanel">
+  <div class="card"><h3>🛒 Shopping List</h3><div class="notice">Items selected from the Master List appear here. Check them off as they go in the cart.</div><div id="shoppingList"></div><div class="row"><button class="secondary" onclick="clearPurchased()">Clear Purchased</button></div></div>
 </div>
+
+<div id="groceryMasterPanel" class="hidden">
+  <div class="card"><h3>Master Grocery List</h3><div class="notice">Scan this permanent list and check anything you need. Add your own items anytime.</div>
+  <div class="row"><input id="newGroceryItem" placeholder="Add a grocery item…"><button onclick="addMasterGrocery()">Add</button></div>
+  <select id="newGroceryCategory"><option>Produce</option><option>Meat</option><option>Dairy & Eggs</option><option>Bread</option><option>Pantry</option><option>Frozen</option><option>Drinks</option><option>Snacks</option><option>Household</option><option>Personal Care</option><option>Other</option></select>
+  <input id="groceryPhotoInput" class="hidden" type="file" accept="image/*" onchange="handleGroceryPhoto(event)">
+  <div id="masterGrocery"></div></div>
+</div>
+
+<div id="groceryRecipesPanel" class="hidden">
+  <div class="card">
+    <h3>🍳 Find Recipe Ideas</h3>
+    <div class="notice">Ask for meal ideas by ingredients, cuisine, or whatever sounds good tonight.</div>
+    <div class="recipe-choice"><div class="recipe-icon">🥕</div><div><b>Use My Ingredients</b><span class="notice">Tell it what food you already have.</span></div></div>
+    <div class="recipe-choice"><div class="recipe-icon">🌎</div><div><b>Choose a Cuisine</b><span class="notice">Japanese, Italian, Mexican, Southern, or anything else.</span></div></div>
+    <div class="recipe-choice"><div class="recipe-icon">👨‍🍳</div><div><b>Just Ask</b><span class="notice">For example: “Give me 5 simple Japanese-style meals for tonight.”</span></div></div>
+  </div>
+
+  <div class="card recipe-form">
+    <h3>What sounds good?</h3>
+    <textarea id="recipeRequest" placeholder="Example: I have chicken, rice, cabbage and eggs. Give me 5 Japanese-style meals that take about 30 minutes."></textarea>
+    <div class="row"><button id="findRecipesBtn" type="button" onclick="findRecipes()">Find Recipes</button></div>
+    <div id="recipeStageOneStatus" class="recipe-coming">Tell me what you have or what sounds good, then tap Find Recipes.</div>
+  </div>
+</div>
+</section>
+<section id="ideasScreen" class="screen hidden">
+<div class="card"><h3>💡 Ideas</h3><div class="notice">Keep related thoughts together under one idea topic.</div>
+<input id="ideaSearch" placeholder="Search ideas…" oninput="renderIdeas()">
+<div class="row"><input id="newIdeaTopic" placeholder="New idea topic…"><button onclick="addIdeaTopic()">Add</button></div>
+<div id="ideasList"></div></div></section>
+<section id="ideaDetailScreen" class="screen hidden">
+<div class="card"><div class="row"><button class="secondary" onclick="showIdeas()">← Ideas</button></div>
+<h3 id="ideaDetailTitle">💡 Idea</h3><div class="notice">Use this as a small project folder for notes, tasks, and reference pictures.</div>
+
+<div class="idea-section-title">Project Description</div>
+<textarea id="ideaDescription" class="idea-description" placeholder="Describe the idea, dimensions, materials, plans, or anything important…"></textarea>
+<div id="ideaDescriptionStatus" class="meta">Autosaves as you type.</div>
+
+<div class="idea-section-title">Checklist</div>
+<div class="row"><input id="newIdeaTask" placeholder="Add a task…"><button onclick="addIdeaTask()">Add</button></div>
+<div id="ideaChecklist"></div>
+
+<div class="idea-section-title">Pictures</div>
+<div class="row"><button class="secondary" onclick="pickIdeaPhoto()">📷 Add Picture</button><span id="ideaPhotoStatus" class="photo-note"></span></div>
+<input id="ideaPhotoInput" class="hidden" type="file" accept="image/*" onchange="handleIdeaPhoto(event)">
+<div id="ideaPhotos" class="photo-grid"></div>
+
+<div class="idea-section-title">Thoughts</div>
+<div class="row"><input id="newIdeaThought" placeholder="Add another thought…"><button onclick="addIdeaThought()">Add</button></div>
+<div id="ideaThoughts"></div></div></section>
+<section id="moreScreen" class="screen hidden">
+<div class="card"><h3>Settings</h3><label>Text size</label><select id="fontSize" onchange="setFont(this.value)"><option value="">Normal</option><option value="large">Large</option><option value="xlarge">Extra Large</option></select></div>
+<div class="card"><h3>Trash</h3><div id="trash"></div></div>
+<div class="card help"><h3>About</h3><b>Old Carpenter's Notepad</b><br>Simple notes. No nonsense.<br><br><b>Version 1.3</b><br><br>Your notes are saved automatically on this device and synchronized to your private cloud account.</div>
+</section>
+
+<div id="photoModal" class="photo-modal hidden" onclick="closePhotoModal()"><button class="close-photo" onclick="closePhotoModal();event.stopPropagation()">×</button><img id="photoModalImg" alt="Large photo" onclick="event.stopPropagation()"></div>
+
+<nav>
+<button onclick="showNotes()"><b>📝</b>Notes</button>
+<button onclick="openGrocery()"><b>🛒</b>Grocery</button>
+<button onclick="showIdeas()"><b>💡</b>Ideas</button>
+<button onclick="showMore()"><b>⚙️</b>More</button>
+</nav>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL = "https://tgdyvyyggybatctevywf.supabase.co";
-const SUPABASE_KEY = "sb_publishable_4a-tmm6M4lKpTRyVT10uTw_eB3ghxvG";
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL="https://gupquxmhdrpwqvyuirsl.supabase.co";
+const SUPABASE_KEY="sb_publishable_TwCowZOvcHHKArXG5ncgqg_1fRFBo-A";
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-let inventory = [];
-let currentPhoto = "";
-let currentUser = null;
-let realtimeChannel = null;
-let barcodeStream = null;
-let barcodeDetector = null;
-let barcodeScanActive = false;
-let selectedLocationFilter = "";
+const LEGACY_KEY="ocn_notes_v1";
+const USER_KEY_PREFIX="ocn_notes_user_";
+let notes=[],current=null,pinnedOnly=false,currentUser=null,syncTimer=null;
+let booting=true,recoveryMode=false,realtimeChannel=null,lastRealtimeRefresh=0;
+const PHOTO_BUCKET="app-photos";
+const photoUrlCache=new Map();
+let groceryPhotoIndex=null;
 
-const photoInput = document.getElementById("photo");
-const photoPreview = document.getElementById("photoPreview");
-
-photoInput.addEventListener("change", function () {
-    const file = this.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-
-    reader.onload = function (event) {
-        const image = new Image();
-
-        image.onload = async function () {
-            const canvas = document.createElement("canvas");
-            const maxSize = 700;
-
-            let width = image.width;
-            let height = image.height;
-
-            if (width > height && width > maxSize) {
-                height *= maxSize / width;
-                width = maxSize;
-            } else if (height > maxSize) {
-                width *= maxSize / height;
-                height = maxSize;
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(image, 0, 0, width, height);
-
-            currentPhoto = canvas.toDataURL("image/jpeg", 0.72);
-            photoPreview.src = currentPhoto;
-            photoPreview.style.display = "block";
-
-            await identifyElectronics(currentPhoto);
-        };
-
-        image.src = event.target.result;
-    };
-
-    reader.readAsDataURL(file);
-});
-
-async function identifyElectronics(imageData) {
-    if (!imageData) return;
-
-    setSyncStatus("AI is identifying this item…");
-
-    try {
-        const { data, error } = await db.functions.invoke("identify-electronics", {
-            body: { image: imageData }
-        });
-
-        if (error) throw error;
-
-        const result =
-            data?.identification ||
-            data?.result ||
-            data?.item ||
-            data;
-
-        if (!result || typeof result !== "object") {
-            throw new Error("The AI did not return usable item information.");
-        }
-
-        const name =
-            result.item_name ||
-            result.name ||
-            result.itemName ||
-            "";
-
-        const category = result.category || "";
-
-        const manufacturer =
-            result.manufacturer ||
-            result.brand ||
-            "";
-
-        const partNumber =
-            result.model_part_number ||
-            result.part_number ||
-            result.partNumber ||
-            result.model_number ||
-            result.model ||
-            "";
-
-        const barcode =
-            result.barcode ||
-            result.upc ||
-            result.upc_number ||
-            "";
-
-        const specifications =
-            typeof result.specifications === "string"
-                ? result.specifications.trim()
-                : "";
-
-        const visibleMarkings =
-            typeof result.visible_markings === "string"
-                ? result.visible_markings.trim()
-                : "";
-
-        const aiNotes =
-            typeof result.notes === "string"
-                ? result.notes.trim()
-                : "";
-
-        if (name) document.getElementById("itemName").value = name;
-        if (manufacturer) document.getElementById("manufacturer").value = manufacturer;
-        if (partNumber) document.getElementById("partNumber").value = partNumber;
-        if (barcode) document.getElementById("barcode").value = barcode;
-
-        if (category) {
-            const categorySelect = document.getElementById("category");
-            const exactOption = Array.from(categorySelect.options).find(
-                option => normalize(option.value) === normalize(category)
-            );
-
-            if (exactOption) categorySelect.value = exactOption.value;
-        }
-
-        const noteParts = [];
-
-        if (specifications) noteParts.push("Specifications: " + specifications);
-        if (visibleMarkings) noteParts.push("Visible markings: " + visibleMarkings);
-        if (aiNotes) noteParts.push(aiNotes);
-
-        if (noteParts.length > 0) {
-            document.getElementById("notes").value = noteParts.join("\n");
-        }
-
-        setSyncStatus("AI identification complete — review the details before saving.");
-    } catch (error) {
-        console.error("AI identification failed:", error);
-        setSyncStatus(
-            "AI identification failed: " + (error.message || "Unknown error"),
-            false
-        );
-    }
+function safeParse(raw,fallback){try{return raw?JSON.parse(raw):fallback}catch{return fallback}}
+function userKey(){return currentUser?USER_KEY_PREFIX+currentUser.id:null}
+function loadUserLocal(){const key=userKey();notes=key?safeParse(localStorage.getItem(key),[]):[]}
+function localSave(){const key=userKey();if(key)localStorage.setItem(key,JSON.stringify(notes))}
+function setSyncStatus(t){const el=document.getElementById("syncStatus");if(el)el.textContent=t}
+function authMessage(t){document.getElementById("authMsg").textContent=t||""}
+function friendlyError(error,fallback="Something went wrong. Please try again."){
+  const m=(error?.message||String(error||"")).toLowerCase();
+  if(m.includes("invalid login credentials"))return "The email address or password is incorrect.";
+  if(m.includes("email rate limit"))return "Too many emails were requested. Please wait a while and try once.";
+  if(m.includes("network")||m.includes("fetch"))return "Could not reach the cloud. Check your internet connection and try again.";
+  return error?.message||fallback;
 }
-
-async function startBarcodeScanner() {
-    if (barcodeScanActive) return;
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("This browser cannot open the camera for barcode scanning.");
-        return;
-    }
-
-    if (!("BarcodeDetector" in window)) {
-        alert(
-            "Automatic barcode scanning is not supported by this browser. " +
-            "You can still type the barcode number or photograph the label for AI identification."
-        );
-        return;
-    }
-
-    try {
-        setSyncStatus("Opening camera for barcode scan…");
-
-        const supportedFormats = await BarcodeDetector.getSupportedFormats();
-
-        const preferredFormats = [
-            "ean_13",
-            "ean_8",
-            "upc_a",
-            "upc_e",
-            "code_128",
-            "code_39",
-            "itf",
-            "qr_code",
-            "data_matrix"
-        ].filter(format => supportedFormats.includes(format));
-
-        barcodeDetector = new BarcodeDetector({
-            formats: preferredFormats.length ? preferredFormats : supportedFormats
-        });
-
-        barcodeStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: "environment" } },
-            audio: false
-        });
-
-        const scannerBox = document.getElementById("scannerBox");
-        const video = document.getElementById("barcodeVideo");
-
-        scannerBox.style.display = "block";
-        video.srcObject = barcodeStream;
-
-        await video.play();
-
-        barcodeScanActive = true;
-        setSyncStatus("Point the camera at the barcode…");
-        scanBarcodeFrame();
-
-    } catch (error) {
-        console.error("Barcode scanner failed:", error);
-        stopBarcodeScanner();
-        setSyncStatus(
-            "Barcode scanner could not start: " + (error.message || "Unknown error"),
-            false
-        );
-    }
+function showAuth(msg=""){
+  document.getElementById("authWrap").classList.remove("hidden");
+  document.getElementById("appRoot").classList.add("hidden");
+  authMessage(msg);
 }
-
-async function scanBarcodeFrame() {
-    if (!barcodeScanActive || !barcodeDetector) return;
-
-    const video = document.getElementById("barcodeVideo");
-
-    try {
-        if (video.readyState >= 2) {
-            const barcodes = await barcodeDetector.detect(video);
-
-            if (barcodes && barcodes.length > 0) {
-                const value = String(barcodes[0].rawValue || "").trim();
-
-                if (value) {
-                    document.getElementById("barcode").value = value;
-                    stopBarcodeScanner();
-                    setSyncStatus("Barcode scanned: " + value);
-                    return;
-                }
-            }
-        }
-    } catch (error) {
-        console.error("Barcode frame scan error:", error);
+function showApp(){
+  if(recoveryMode)return;
+  document.getElementById("authWrap").classList.add("hidden");
+  document.getElementById("appRoot").classList.remove("hidden");
+}
+function togglePassword(inputId,buttonId){
+  const input=document.getElementById(inputId),btn=document.getElementById(buttonId);
+  const show=input.type==="password";
+  input.type=show?"text":"password";
+  btn.textContent=show?"🙈 Hide":"👁 Show";
+}
+async function signIn(){
+  const email=document.getElementById("authEmail").value.trim();
+  const password=document.getElementById("authPassword").value;
+  if(!email||!password){authMessage("Enter your email and password.");return}
+  authMessage("Signing in…");
+  try{
+    const {data,error}=await db.auth.signInWithPassword({email,password});
+    if(error){authMessage(friendlyError(error));return}
+    currentUser=data.user;recoveryMode=false;showApp();await initializeSync();startRealtime();
+  }catch(e){console.error(e);authMessage(friendlyError(e))}
+}
+async function signUp(){
+  const email=document.getElementById("authEmail").value.trim();
+  const password=document.getElementById("authPassword").value;
+  if(!email){authMessage("Enter your email address.");return}
+  if(password.length<8){authMessage("Use a password with at least 8 characters.");return}
+  authMessage("Creating account…");
+  try{
+    const {data,error}=await db.auth.signUp({email,password});
+    if(error){authMessage(friendlyError(error));return}
+    if(data.session&&data.user){currentUser=data.user;recoveryMode=false;showApp();await initializeSync();startRealtime()}
+    else authMessage("Account created. Check your email for the confirmation link, then come back and sign in.");
+  }catch(e){console.error(e);authMessage(friendlyError(e))}
+}
+async function requestPasswordReset(){
+  const email=document.getElementById("authEmail").value.trim();
+  if(!email){authMessage("Enter your email address first.");return}
+  authMessage("Sending password reset email…");
+  try{
+    const redirectTo=location.origin+location.pathname;
+    const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo});
+    if(error){authMessage(friendlyError(error));return}
+    authMessage("Password reset email sent. Open the newest email and tap its reset link.");
+  }catch(e){authMessage(friendlyError(e))}
+}
+async function signOut(){
+  clearTimeout(syncTimer);stopRealtime();saveCurrent();localSave();
+  try{await db.auth.signOut()}catch(e){console.error(e)}
+  currentUser=null;current=null;notes=[];recoveryMode=false;
+  document.getElementById("resetBox").classList.add("hidden");
+  showAuth("Signed out.");
+}
+function persist(){
+  localSave();
+  if(!currentUser)return;
+  setSyncStatus(navigator.onLine?"Saved locally — syncing…":"Offline — saved on this device");
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(syncAllToCloud,500);
+}
+function cloudRow(n){return{id:n.id,user_id:currentUser.id,title:n.title||"",body:n.body||"",type:n.type==="check"?"check":"text",items:Array.isArray(n.items)?n.items:[],pinned:!!n.pinned,trash:!!n.trash,modified:Number.isFinite(Number(n.modified))?Number(n.modified):Date.now()}}
+function noteFromRow(r){return{id:r.id,title:r.title||"",body:r.body||"",type:r.type==="check"?"check":"text",items:Array.isArray(r.items)?r.items:[],pinned:!!r.pinned,trash:!!r.trash,modified:Number(r.modified||0)}}
+async function syncAllToCloud(){
+  if(!currentUser)return;
+  if(!navigator.onLine){setSyncStatus("Offline — saved on this device");return}
+  try{
+    setSyncStatus("Syncing…");
+    if(notes.length){
+      const {error}=await db.from("notes").upsert(notes.map(cloudRow),{onConflict:"id"});
+      if(error)throw error;
     }
-
-    if (barcodeScanActive) setTimeout(scanBarcodeFrame, 250);
-}
-
-function stopBarcodeScanner() {
-    barcodeScanActive = false;
-
-    if (barcodeStream) {
-        barcodeStream.getTracks().forEach(track => track.stop());
-        barcodeStream = null;
-    }
-
-    const video = document.getElementById("barcodeVideo");
-
-    if (video) {
-        video.pause();
-        video.srcObject = null;
-    }
-
-    const scannerBox = document.getElementById("scannerBox");
-    if (scannerBox) scannerBox.style.display = "none";
-}
-
-function lookUpPartOnline() {
-    const barcode = document.getElementById("barcode").value.trim();
-    const manufacturer = document.getElementById("manufacturer").value.trim();
-    const partNumber = document.getElementById("partNumber").value.trim();
-    const itemName = document.getElementById("itemName").value.trim();
-
-    const query = [...new Set(
-        [barcode, manufacturer, partNumber, itemName].filter(Boolean)
-    )].join(" ").trim();
-
-    if (!query) {
-        alert("Add a barcode, manufacturer, model/part number, or item name first.");
-        return;
-    }
-
-    window.open(
-        "https://www.google.com/search?q=" + encodeURIComponent(query),
-        "_blank",
-        "noopener,noreferrer"
-    );
-}
-
-function normalize(value) {
-    return String(value || "").trim().toLowerCase();
-}
-
-function setSyncStatus(message, good = true) {
-    const el = document.getElementById("syncStatus");
-    el.textContent = message;
-    el.className = good ? "sync-good" : "sync-bad";
-}
-
-function authMessage(message = "") {
-    document.getElementById("authMessage").textContent = message;
-}
-
-function showAuth() {
-    document.getElementById("authWrap").classList.remove("app-hidden");
-    document.getElementById("appRoot").classList.add("app-hidden");
-}
-
-function showApp() {
-    document.getElementById("authWrap").classList.add("app-hidden");
-    document.getElementById("appRoot").classList.remove("app-hidden");
-}
-
-async function signIn() {
-    const email = document.getElementById("authEmail").value.trim();
-    const password = document.getElementById("authPassword").value;
-
-    if (!email || !password) {
-        authMessage("Enter your email and password.");
-        return;
-    }
-
-    authMessage("Signing in…");
-
-    const { error } = await db.auth.signInWithPassword({ email, password });
-
-    if (error) {
-        authMessage(error.message);
-        return;
-    }
-
-    authMessage("");
-}
-
-async function signUp() {
-    const email = document.getElementById("authEmail").value.trim();
-    const password = document.getElementById("authPassword").value;
-
-    if (!email || !password) {
-        authMessage("Enter an email and password first.");
-        return;
-    }
-
-    if (password.length < 6) {
-        authMessage("Use a password with at least 6 characters.");
-        return;
-    }
-
-    authMessage("Creating account…");
-
-    const { data, error } = await db.auth.signUp({ email, password });
-
-    if (error) {
-        authMessage(error.message);
-        return;
-    }
-
-    if (data.session) {
-        authMessage("");
-    } else {
-        authMessage(
-            "Account created. Check your email for the confirmation message, then sign in."
-        );
-    }
-}
-
-async function signOut() {
-    stopBarcodeScanner();
-    await db.auth.signOut();
-}
-
-function rowToItem(row) {
-    return {
-        id: row.id,
-        name: row.name || "",
-        category: row.category || "",
-        manufacturer: row.manufacturer || "",
-        partNumber: row.part_number || "",
-        barcode: row.barcode || "",
-        quantity: Number(row.quantity || 1),
-        location: row.storage_location || "",
-        condition: row.condition || "New",
-        notes: row.notes || "",
-        photo: row.photo_path || "",
-        dateAdded: row.created_at
-            ? new Date(row.created_at).toLocaleDateString()
-            : ""
-    };
-}
-
-async function loadInventory() {
-    if (!currentUser) return;
-
-    setSyncStatus("Loading cloud inventory…");
-
-    const { data, error } = await db
-        .from("inventory_items")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-    if (error) {
-        setSyncStatus("Cloud load failed: " + error.message, false);
-        return;
-    }
-
-    inventory = (data || []).map(rowToItem);
-
-    refreshLocationTools();
-    renderLocations();
-    renderInventory();
-
     setSyncStatus("Cloud synced");
+  }catch(e){console.error("Cloud sync failed:",e);setSyncStatus("Sync problem — local copy kept")}
 }
-
-function findDuplicate(name, partNumber, barcode) {
-    const cleanName = normalize(name);
-    const cleanPart = normalize(partNumber);
-    const cleanBarcode = normalize(barcode);
-
-    return inventory.find(item => {
-        if (cleanBarcode && normalize(item.barcode) === cleanBarcode) return true;
-        if (cleanPart && normalize(item.partNumber) === cleanPart) return true;
-        if (cleanName && normalize(item.name) === cleanName) return true;
-        return false;
-    });
+async function deleteCloudNote(id){
+  if(!currentUser)return;
+  if(!navigator.onLine){setSyncStatus("Offline — delete will need cloud connection");return}
+  try{
+    const {error}=await db.from("notes").delete().eq("id",id).eq("user_id",currentUser.id);
+    if(error)throw error;setSyncStatus("Cloud synced");
+  }catch(e){console.error("Cloud delete failed:",e);setSyncStatus("Delete sync problem")}
 }
-
-function getLocations() {
-    const map = new Map();
-
-    inventory.forEach(item => {
-        const name = String(item.location || "").trim();
-        if (!name) return;
-
-        const key = normalize(name);
-
-        if (!map.has(key)) {
-            map.set(key, {
-                name,
-                differentItems: 0,
-                totalPieces: 0
-            });
-        }
-
-        const location = map.get(key);
-        location.differentItems += 1;
-        location.totalPieces += Number(item.quantity || 0);
-    });
-
-    return Array.from(map.values()).sort((a, b) =>
-        a.name.localeCompare(b.name, undefined, {
-            numeric: true,
-            sensitivity: "base"
-        })
-    );
+function normalizeLegacy(list){if(!Array.isArray(list))return[];return list.filter(n=>n&&n.id).map(n=>({id:n.id,title:n.title||"",body:n.body||"",type:n.type==="check"?"check":"text",items:Array.isArray(n.items)?n.items:[],pinned:!!n.pinned,trash:!!n.trash,modified:Number(n.modified||Date.now())}))}
+function mergeNotes(local,cloud){
+  const merged=new Map();
+  for(const n of local)merged.set(n.id,n);
+  for(const c of cloud){const l=merged.get(c.id);if(!l||Number(c.modified||0)>=Number(l.modified||0))merged.set(c.id,c)}
+  return [...merged.values()];
 }
-
-function refreshLocationTools() {
-    const select = document.getElementById("existingLocation");
-    if (!select) return;
-
-    const current = select.value;
-    const locations = getLocations();
-
-    select.innerHTML =
-        '<option value="">Choose an existing location</option>' +
-        locations.map(location =>
-            `<option value="${escapeHTML(location.name)}">${escapeHTML(location.name)}</option>`
-        ).join("");
-
-    if (locations.some(location => location.name === current)) {
-        select.value = current;
+async function initializeSync(){
+  if(!currentUser)return;
+  loadUserLocal();setSyncStatus(navigator.onLine?"Loading cloud notes…":"Offline — using saved notes");
+  if(!navigator.onLine){render();return}
+  try{
+    const {data,error}=await db.from("notes").select("*").eq("user_id",currentUser.id);
+    if(error)throw error;
+    const cloud=(data||[]).map(noteFromRow);
+    if(!notes.length&&!cloud.length){
+      const legacy=normalizeLegacy(safeParse(localStorage.getItem(LEGACY_KEY),[]));
+      if(legacy.length){notes=legacy;localSave();await syncAllToCloud();localStorage.setItem(LEGACY_KEY+"_migrated","yes");render();return}
     }
+    notes=mergeNotes(notes,cloud);localSave();render();await syncAllToCloud();
+  }catch(e){console.error("Cloud load failed:",e);setSyncStatus("Cloud unavailable — using saved local notes");render()}
 }
-
-function useExistingLocation() {
-    const value = document.getElementById("existingLocation").value;
-
-    if (!value) return;
-
-    document.getElementById("location").value = value;
-    clearLocationBuilder(false);
+async function refreshFromCloud(){
+  if(!currentUser||!navigator.onLine)return;
+  try{
+    const {data,error}=await db.from("notes").select("*").eq("user_id",currentUser.id);
+    if(error)throw error;
+    notes=mergeNotes(notes,(data||[]).map(noteFromRow));localSave();render();
+    if(current&&document.getElementById("editorScreen")&&!document.getElementById("editorScreen").classList.contains("hidden")){
+      const updated=notes.find(n=>n.id===current.id);if(updated)current=updated;
+    }
+    setSyncStatus("Cloud synced");
+  }catch(e){console.error("Realtime refresh failed:",e)}
 }
-
-function buildLocation() {
-    const parts = [
-        document.getElementById("locationArea").value.trim(),
-        document.getElementById("locationSection").value.trim(),
-        document.getElementById("locationBin").value.trim()
-    ].filter(Boolean);
-
-    if (parts.length === 0) {
-        alert("Enter at least one part of the storage location.");
-        return;
-    }
-
-    const location = parts.join(" - ");
-    document.getElementById("location").value = location;
-    document.getElementById("existingLocation").value = "";
+function startRealtime(){
+  stopRealtime();
+  if(!currentUser||!db.channel)return;
+  try{
+    realtimeChannel=db.channel("notes-"+currentUser.id)
+      .on("postgres_changes",{event:"*",schema:"public",table:"notes",filter:"user_id=eq."+currentUser.id},()=>{
+        const now=Date.now();if(now-lastRealtimeRefresh<300)return;lastRealtimeRefresh=now;refreshFromCloud();
+      }).subscribe();
+  }catch(e){console.warn("Realtime unavailable:",e)}
 }
-
-function clearLocationBuilder(clearFinal = false) {
-    document.getElementById("locationArea").value = "";
-    document.getElementById("locationSection").value = "";
-    document.getElementById("locationBin").value = "";
-    document.getElementById("existingLocation").value = "";
-
-    if (clearFinal) {
-        document.getElementById("location").value = "";
-    }
+function stopRealtime(){if(realtimeChannel){try{db.removeChannel(realtimeChannel)}catch{}realtimeChannel=null}}
+async function signedPhotoUrl(path){
+  if(!path)return "";
+  const cached=photoUrlCache.get(path);
+  if(cached&&cached.expires>Date.now())return cached.url;
+  const {data,error}=await db.storage.from(PHOTO_BUCKET).createSignedUrl(path,3600);
+  if(error)throw error;
+  photoUrlCache.set(path,{url:data.signedUrl,expires:Date.now()+55*60*1000});
+  return data.signedUrl;
 }
-
-function syncBuilderFromTypedLocation() {
-    document.getElementById("existingLocation").value = "";
+async function hydratePhotoUrls(root=document){
+  const imgs=[...root.querySelectorAll("img[data-photo-path]")];
+  await Promise.all(imgs.map(async img=>{
+    const path=img.dataset.photoPath;if(!path)return;
+    try{img.src=await signedPhotoUrl(path)}catch(e){console.error("Photo load failed:",e);img.alt="Photo unavailable"}
+  }));
 }
-
-function renderLocations() {
-    const grid = document.getElementById("locationGrid");
-    if (!grid) return;
-
-    const locations = getLocations();
-
-    if (locations.length === 0) {
-        grid.innerHTML =
-            '<div class="empty">No storage locations yet. Save your first item and its location will appear here.</div>';
-        return;
-    }
-
-    grid.innerHTML = locations.map(location => `
-        <div class="location-card">
-            <h3>${escapeHTML(location.name)}</h3>
-
-            <div class="count">
-                <b>${location.differentItems}</b> different item${location.differentItems === 1 ? "" : "s"}<br>
-                <b>${location.totalPieces}</b> total piece${location.totalPieces === 1 ? "" : "s"}
-            </div>
-
-            <div class="buttons">
-                <button
-                    class="secondary"
-                    onclick='viewLocation(${JSON.stringify(location.name)})'>
-                    View Items
-                </button>
-
-                <button
-                    class="secondary"
-                    onclick='chooseLocationForNewItem(${JSON.stringify(location.name)})'>
-                    Use for New Item
-                </button>
-            </div>
-        </div>
-    `).join("");
+function photoExtension(file){
+  const t=(file?.type||"").toLowerCase();
+  if(t.includes("png"))return "png";if(t.includes("webp"))return "webp";if(t.includes("gif"))return "gif";return "jpg";
 }
-
-function viewLocation(location) {
-    selectedLocationFilter = location;
-    document.getElementById("search").value = "";
-    renderInventory();
-
-    const inventoryPanel = document.getElementById("inventory");
-    inventoryPanel.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function chooseLocationForNewItem(location) {
-    document.getElementById("location").value = location;
-    document.getElementById("existingLocation").value = location;
-    clearLocationBuilder(false);
-
-    const locationField = document.getElementById("location");
-    locationField.scrollIntoView({ behavior: "smooth", block: "center" });
-}
-
-function clearInventoryFilter() {
-    selectedLocationFilter = "";
-    document.getElementById("search").value = "";
-    renderInventory();
-}
-
-async function saveItem() {
-    if (!currentUser) {
-        alert("Please sign in first.");
-        return;
-    }
-
-    const name = document.getElementById("itemName").value.trim();
-    const category = document.getElementById("category").value;
-    const manufacturer = document.getElementById("manufacturer").value.trim();
-    const partNumber = document.getElementById("partNumber").value.trim();
-    const barcode = document.getElementById("barcode").value.trim();
-    const quantity = parseInt(document.getElementById("quantity").value) || 1;
-    const location = document.getElementById("location").value.trim();
-    const condition = document.getElementById("condition").value;
-    const notes = document.getElementById("notes").value.trim();
-
-    if (!name) {
-        alert("Please enter an item name.");
-        return;
-    }
-
-    if (!location) {
-        alert("Please enter where the item is stored.");
-        return;
-    }
-
-    const duplicate = findDuplicate(name, partNumber, barcode);
-
-    if (duplicate) {
-        const warning = document.getElementById("duplicateWarning");
-        warning.style.display = "block";
-
-        warning.innerHTML =
-            "<strong>Possible Duplicate Found</strong>" +
-            "You already have <b>" +
-            duplicate.quantity +
-            "</b> of <b>" +
-            escapeHTML(duplicate.name) +
-            "</b> stored at <b>" +
-            escapeHTML(duplicate.location) +
-            "</b>.<br><br>" +
-            "Check the existing item before adding another.";
-
-        const continueSaving = confirm(
-            "WARNING: You may already own this item.\n\n" +
-            duplicate.name +
-            "\nQuantity already recorded: " +
-            duplicate.quantity +
-            "\nLocation: " +
-            duplicate.location +
-            "\n\nDo you still want to add this as another inventory entry?"
-        );
-
-        if (!continueSaving) return;
-    }
-
-    setSyncStatus("Saving to cloud…");
-
-    const { error } = await db
-        .from("inventory_items")
-        .insert({
-            user_id: currentUser.id,
-            name,
-            category,
-            manufacturer,
-            part_number: partNumber,
-            barcode,
-            quantity,
-            storage_location: location,
-            condition,
-            notes,
-            photo_path: currentPhoto || null
-        });
-
-    if (error) {
-        setSyncStatus("Save failed: " + error.message, false);
-        alert("Could not save item: " + error.message);
-        return;
-    }
-
-    clearForm();
-    await loadInventory();
-}
-
-async function deleteItem(id) {
-    const item = inventory.find(item => item.id === id);
-    if (!item) return;
-
-    const answer = confirm("Delete " + item.name + " from the inventory?");
-    if (!answer) return;
-
-    setSyncStatus("Deleting…");
-
-    const { error } = await db
-        .from("inventory_items")
-        .delete()
-        .eq("id", id);
-
-    if (error) {
-        setSyncStatus("Delete failed: " + error.message, false);
-        alert("Could not delete item: " + error.message);
-        return;
-    }
-
-    await loadInventory();
-}
-
-async function addOne(id) {
-    const item = inventory.find(item => item.id === id);
-    if (!item) return;
-
-    const { error } = await db
-        .from("inventory_items")
-        .update({
-            quantity: item.quantity + 1,
-            updated_at: new Date().toISOString()
-        })
-        .eq("id", id);
-
-    if (error) {
-        setSyncStatus("Update failed: " + error.message, false);
-        return;
-    }
-
-    await loadInventory();
-}
-
-async function removeOne(id) {
-    const item = inventory.find(item => item.id === id);
-    if (!item) return;
-
-    if (item.quantity <= 1) {
-        alert("Quantity is already 1. Use Delete if you no longer own this item.");
-        return;
-    }
-
-    const { error } = await db
-        .from("inventory_items")
-        .update({
-            quantity: item.quantity - 1,
-            updated_at: new Date().toISOString()
-        })
-        .eq("id", id);
-
-    if (error) {
-        setSyncStatus("Update failed: " + error.message, false);
-        return;
-    }
-
-    await loadInventory();
-}
-
-function clearForm() {
-    stopBarcodeScanner();
-
-    document.getElementById("itemName").value = "";
-    document.getElementById("category").value = "";
-    document.getElementById("manufacturer").value = "";
-    document.getElementById("partNumber").value = "";
-    document.getElementById("barcode").value = "";
-    document.getElementById("quantity").value = 1;
-    document.getElementById("location").value = "";
-    document.getElementById("condition").value = "New";
-    document.getElementById("notes").value = "";
-    document.getElementById("photo").value = "";
-
-    clearLocationBuilder(false);
-
-    currentPhoto = "";
-    photoPreview.src = "";
-    photoPreview.style.display = "none";
-
-    document.getElementById("duplicateWarning").style.display = "none";
-}
-
-function renderInventory() {
-    const inventoryDiv = document.getElementById("inventory");
-    const search = normalize(document.getElementById("search").value);
-
-    const filtered = inventory.filter(item => {
-        const combined = normalize(
-            item.name + " " +
-            item.category + " " +
-            item.manufacturer + " " +
-            item.partNumber + " " +
-            item.barcode + " " +
-            item.location + " " +
-            item.notes
-        );
-
-        const matchesSearch = combined.includes(search);
-
-        const matchesLocation =
-            !selectedLocationFilter ||
-            normalize(item.location) === normalize(selectedLocationFilter);
-
-        return matchesSearch && matchesLocation;
-    });
-
-    const activeFilter = document.getElementById("activeLocationFilter");
-
-    if (selectedLocationFilter) {
-        activeFilter.style.display = "block";
-        activeFilter.innerHTML =
-            "Showing items in <b>" +
-            escapeHTML(selectedLocationFilter) +
-            "</b>.";
-    } else {
-        activeFilter.style.display = "none";
-        activeFilter.innerHTML = "";
-    }
-
-    if (filtered.length === 0) {
-        inventoryDiv.innerHTML =
-            '<div class="empty">No electronics found.</div>';
-    } else {
-        inventoryDiv.innerHTML = filtered.map(item => `
-            <div class="item-card">
-
-                ${
-                    item.photo
-                    ? `<img src="${item.photo}" alt="">`
-                    : ""
-                }
-
-                ${
-                    item.category
-                    ? `<span class="badge">${escapeHTML(item.category)}</span>`
-                    : ""
-                }
-
-                <h3>${escapeHTML(item.name)}</h3>
-
-                <div class="item-info">
-                    <b>Quantity:</b> ${item.quantity}
-                    <br>
-
-                    <b>Location:</b> ${escapeHTML(item.location)}
-
-                    ${
-                        item.manufacturer
-                        ? `<br><b>Manufacturer:</b> ${escapeHTML(item.manufacturer)}`
-                        : ""
-                    }
-
-                    ${
-                        item.partNumber
-                        ? `<br><b>Part #:</b> ${escapeHTML(item.partNumber)}`
-                        : ""
-                    }
-
-                    ${
-                        item.barcode
-                        ? `<br><b>Barcode:</b> ${escapeHTML(item.barcode)}`
-                        : ""
-                    }
-
-                    <br>
-                    <b>Condition:</b> ${escapeHTML(item.condition)}
-
-                    ${
-                        item.notes
-                        ? `<br><b>Notes:</b> ${escapeHTML(item.notes)}`
-                        : ""
-                    }
-
-                    <br>
-                    <b>Added:</b> ${escapeHTML(item.dateAdded)}
-                </div>
-
-                <div class="buttons">
-                    <button
-                        class="secondary"
-                        onclick='addOne(${JSON.stringify(item.id)})'>
-                        +1
-                    </button>
-
-                    <button
-                        class="secondary"
-                        onclick='removeOne(${JSON.stringify(item.id)})'>
-                        -1
-                    </button>
-
-                    <button
-                        class="danger"
-                        onclick='deleteItem(${JSON.stringify(item.id)})'>
-                        Delete
-                    </button>
-                </div>
-            </div>
-        `).join("");
-    }
-
-    updateStats();
-}
-
-function updateStats() {
-    document.getElementById("uniqueCount").textContent = inventory.length;
-
-    const total = inventory.reduce(
-        (sum, item) => sum + Number(item.quantity || 0),
-        0
-    );
-
-    document.getElementById("totalCount").textContent = total;
-
-    const locations = new Set(
-        inventory
-            .map(item => normalize(item.location))
-            .filter(Boolean)
-    );
-
-    document.getElementById("locationCount").textContent = locations.size;
-}
-
-function escapeHTML(value) {
-    return String(value || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-function localMigrationKey() {
-    return currentUser
-        ? "electronicsInventoryMigrated_" + currentUser.id
-        : "";
-}
-
-async function migrateLocalInventoryOnce() {
-    if (!currentUser) return;
-
-    const migrationKey = localMigrationKey();
-
-    if (localStorage.getItem(migrationKey) === "yes") {
-        return;
-    }
-
-    let localItems = [];
-
-    try {
-        localItems = JSON.parse(
-            localStorage.getItem("electronicsInventory") || "[]"
-        );
-    } catch {
-        localItems = [];
-    }
-
-    if (!Array.isArray(localItems) || localItems.length === 0) {
-        localStorage.setItem(migrationKey, "yes");
-        return;
-    }
-
-    setSyncStatus("Moving existing device inventory into the cloud…");
-
-    const { data: cloudRows, error: cloudError } = await db
-        .from("inventory_items")
-        .select("name,part_number,barcode,storage_location");
-
-    if (cloudError) {
-        setSyncStatus(
-            "Could not check cloud inventory: " + cloudError.message,
-            false
-        );
-        return;
-    }
-
-    const existsInCloud = item => {
-        const localBarcode = normalize(item.barcode);
-        const localPart = normalize(item.partNumber);
-        const localName = normalize(item.name);
-        const localLocation = normalize(item.location);
-
-        return (cloudRows || []).some(row => {
-            if (localBarcode && normalize(row.barcode) === localBarcode) return true;
-            if (localPart && normalize(row.part_number) === localPart) return true;
-
-            return (
-                localName &&
-                normalize(row.name) === localName &&
-                normalize(row.storage_location) === localLocation
-            );
-        });
+async function preparePhoto(file){
+  if(!file||!file.type?.startsWith("image/"))throw new Error("Choose an image file.");
+  return await new Promise(resolve=>{
+    const url=URL.createObjectURL(file),img=new Image();
+    img.onload=()=>{
+      try{
+        const max=1600,scale=Math.min(1,max/Math.max(img.width,img.height));
+        const w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
+        const canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
+        canvas.getContext("2d").drawImage(img,0,0,w,h);
+        canvas.toBlob(blob=>{URL.revokeObjectURL(url);resolve(blob||file)},"image/jpeg",0.84);
+      }catch{URL.revokeObjectURL(url);resolve(file)}
     };
-
-    const rowsToInsert = localItems
-        .filter(item =>
-            item &&
-            item.name &&
-            item.location &&
-            !existsInCloud(item)
-        )
-        .map(item => ({
-            user_id: currentUser.id,
-            name: item.name,
-            category: item.category || "",
-            manufacturer: item.manufacturer || "",
-            part_number: item.partNumber || "",
-            barcode: item.barcode || "",
-            quantity: Number(item.quantity || 1),
-            storage_location: item.location,
-            condition: item.condition || "New",
-            notes: item.notes || "",
-            photo_path: item.photo || null
-        }));
-
-    if (rowsToInsert.length > 0) {
-        const { error } = await db
-            .from("inventory_items")
-            .insert(rowsToInsert);
-
-        if (error) {
-            setSyncStatus(
-                "Local inventory migration failed: " + error.message,
-                false
-            );
-            return;
-        }
-    }
-
-    localStorage.setItem(migrationKey, "yes");
+    img.onerror=()=>{URL.revokeObjectURL(url);resolve(file)};img.src=url;
+  });
+}
+async function uploadAppPhoto(file,folder){
+  if(!currentUser)throw new Error("Sign in before adding a picture.");
+  const prepared=await preparePhoto(file);
+  const ext=prepared.type==="image/jpeg"?"jpg":photoExtension(file);
+  const path=`${currentUser.id}/${folder}/${crypto.randomUUID()}.${ext}`;
+  const {error}=await db.storage.from(PHOTO_BUCKET).upload(path,prepared,{contentType:prepared.type||file.type,upsert:false});
+  if(error)throw error;return path;
+}
+async function deleteAppPhoto(path){
+  if(!path||!currentUser)return;
+  try{const {error}=await db.storage.from(PHOTO_BUCKET).remove([path]);if(error)throw error;photoUrlCache.delete(path)}catch(e){console.error("Photo delete failed:",e);setSyncStatus("Photo delete problem — note data kept")}
+}
+function showPhotoModal(src){if(!src)return;document.getElementById("photoModalImg").src=src;document.getElementById("photoModal").classList.remove("hidden")}
+function closePhotoModal(){document.getElementById("photoModal").classList.add("hidden");document.getElementById("photoModalImg").src=""}
+function esc(s){return(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function screens(id){["notesScreen","editorScreen","voiceScreen","groceryScreen","ideasScreen","ideaDetailScreen","moreScreen"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id))}
+function showNotes(){saveCurrent();screens("notesScreen");render()}
+function render(){
+  const q=document.getElementById("search").value.toLowerCase();
+  const a=notes.filter(n=>!n.trash&&n.title!=="__IDEAS__"&&n.title!=="Grocery List"&&(!pinnedOnly||n.pinned)&&((n.title+" "+n.body+" "+(n.items||[]).map(i=>i.t).join(" ")).toLowerCase().includes(q))).sort((a,b)=>(b.pinned-a.pinned)||(b.modified-a.modified));
+  document.getElementById("pinnedBtn").textContent=pinnedOnly?"📌 Showing Pinned":"📌 Pinned";
+  const el=document.getElementById("notes");
+  el.innerHTML=a.length?a.map(n=>`<div class="card" onclick="openNote('${n.id}')"><h3>${n.pinned?"📌 ":""}${esc(n.title||"Untitled")}</h3><div class="preview">${n.type==="check"?(n.items.filter(i=>!i.done).length+" items left"):esc((n.body||"").slice(0,110))}</div><div class="meta">${new Date(n.modified).toLocaleString()}</div></div>`).join(""):`<div class="empty">No notes found.</div>`;
+}
+document.getElementById("search").addEventListener("input",render);
+function newNote(){const n={id:crypto.randomUUID(),title:"",body:"",type:"text",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);persist();openNote(n.id)}
+function newChecklist(){const n={id:crypto.randomUUID(),title:"New Checklist",body:"",type:"check",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);persist();openNote(n.id)}
+function openNote(id){saveCurrent();current=notes.find(n=>n.id===id);if(!current)return;screens("editorScreen");document.getElementById("noteTitle").value=current.title;document.getElementById("noteBody").value=current.body||"";document.getElementById("textEditor").classList.toggle("hidden",current.type!=="text");document.getElementById("checkEditor").classList.toggle("hidden",current.type!=="check");document.getElementById("pinBtn").textContent=current.pinned?"📌 Pinned":"📌 Pin";document.getElementById("savedMsg").textContent="Autosaves as you type.";renderChecks()}
+function saveCurrent(){if(!current)return;current.title=document.getElementById("noteTitle").value;current.body=document.getElementById("noteBody").value;current.modified=Date.now();persist()}
+["noteTitle","noteBody"].forEach(id=>document.getElementById(id).addEventListener("input",()=>{saveCurrent();document.getElementById("savedMsg").textContent="Saved "+new Date().toLocaleTimeString()}));
+function saveAndHome(){showNotes();current=null}
+function togglePin(){if(!current)return;current.pinned=!current.pinned;current.modified=Date.now();persist();document.getElementById("pinBtn").textContent=current.pinned?"📌 Pinned":"📌 Pin"}
+function trashCurrent(){if(current&&confirm("Move this note to Trash?")){current.trash=true;current.modified=Date.now();persist();current=null;showNotes()}}
+function renderChecks(){if(!current||current.type!=="check")return;document.getElementById("checkItems").innerHTML=current.items.map((i,x)=>`<div class="checkitem"><input type="checkbox" ${i.done?"checked":""} onchange="toggleItem(${x})"><span style="${i.done?"text-decoration:line-through;opacity:.55":""}">${esc(i.t)}</span><button class="secondary" onclick="delItem(${x})">×</button></div>`).join("")}
+function addChecklistItem(){const v=document.getElementById("newItem").value.trim();if(!v||!current)return;current.items.push({t:v,done:false});document.getElementById("newItem").value="";current.modified=Date.now();persist();renderChecks()}
+function toggleItem(i){current.items[i].done=!current.items[i].done;current.modified=Date.now();persist();renderChecks()}
+function delItem(i){current.items.splice(i,1);current.modified=Date.now();persist();renderChecks()}
+const STARTER_GROCERIES=[
+["Apples","Produce"],["Bananas","Produce"],["Lettuce","Produce"],["Tomatoes","Produce"],["Potatoes","Produce"],["Onions","Produce"],
+["Chicken","Meat"],["Ground beef","Meat"],["Bacon","Meat"],["Pork chops","Meat"],["Milk","Dairy & Eggs"],["Eggs","Dairy & Eggs"],["Butter","Dairy & Eggs"],["Cheese","Dairy & Eggs"],
+["Bread","Bread"],["Hamburger buns","Bread"],["Coffee","Pantry"],["Sugar","Pantry"],["Flour","Pantry"],["Rice","Pantry"],["Pasta","Pantry"],["Canned beans","Pantry"],["Soup","Pantry"],
+["Frozen vegetables","Frozen"],["Ice cream","Frozen"],["Bottled water","Drinks"],["Tea","Drinks"],["Soft drinks","Drinks"],["Chips","Snacks"],["Crackers","Snacks"],
+["Paper towels","Household"],["Toilet paper","Household"],["Trash bags","Household"],["Aluminum foil","Household"],["Dish soap","Household"],["Laundry detergent","Household"],
+["Toothpaste","Personal Care"],["Soap","Personal Care"],["Shampoo","Personal Care"]];
+function groceryNote(){
+ let g=notes.find(n=>!n.trash&&n.title==="Grocery List");
+ if(!g){g={id:crypto.randomUUID(),title:"Grocery List",body:"",type:"check",items:STARTER_GROCERIES.map(([t,category])=>({t,category,needed:false,done:false,photoPath:""})),pinned:true,trash:false,modified:Date.now()};notes.push(g);persist()}
+ else{g.type="check";g.items=(g.items||[]).map(i=>({t:i.t,category:i.category||"Other",needed:typeof i.needed==="boolean"?i.needed:!i.done,done:!!i.done,photoPath:i.photoPath||""}));if(!g.items.length){g.items=STARTER_GROCERIES.map(([t,category])=>({t,category,needed:false,done:false,photoPath:""}));g.modified=Date.now();persist()}}
+ return g;
+}
+let groceryTab="shopping";
+function openGrocery(){saveCurrent();screens("groceryScreen");showGroceryTab(groceryTab);renderGrocery()}
+function showGroceryTab(tab){
+ groceryTab=tab;
+ document.getElementById("groceryShoppingPanel").classList.toggle("hidden",tab!=="shopping");
+ document.getElementById("groceryMasterPanel").classList.toggle("hidden",tab!=="master");
+ document.getElementById("groceryRecipesPanel").classList.toggle("hidden",tab!=="recipes");
+ document.getElementById("groceryTabShopping").classList.toggle("active",tab==="shopping");
+ document.getElementById("groceryTabMaster").classList.toggle("active",tab==="master");
+ document.getElementById("groceryTabRecipes").classList.toggle("active",tab==="recipes");
+}
+function formatRecipeText(text){
+ let s=esc(text||"");
+ s=s.replace(/^###\s+(.+)$/gm,"<h4>$1</h4>");
+ s=s.replace(/^##\s+(.+)$/gm,"<h3>$1</h3>");
+ s=s.replace(/^#\s+(.+)$/gm,"<h2>$1</h2>");
+ s=s.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>");
+ s=s.replace(/\n/g,"<br>");
+ return s;
 }
 
-function startRealtime() {
-    if (realtimeChannel) {
-        db.removeChannel(realtimeChannel);
-    }
-
-    realtimeChannel = db
-        .channel("electronics-inventory-" + currentUser.id)
-        .on(
-            "postgres_changes",
-            {
-                event: "*",
-                schema: "public",
-                table: "inventory_items",
-                filter: "user_id=eq." + currentUser.id
-            },
-            () => {
-                loadInventory();
-            }
-        )
-        .subscribe();
+async function findRecipes(){
+ const request=document.getElementById("recipeRequest").value.trim();
+ const status=document.getElementById("recipeStageOneStatus");
+ const btn=document.getElementById("findRecipesBtn");
+ if(!request){status.textContent="Type what kind of meal you want first.";return}
+ if(!currentUser){status.textContent="Please sign in before asking for recipes.";return}
+ btn.disabled=true;
+ btn.textContent="Finding Recipes…";
+ status.textContent="Finding recipe ideas…";
+ try{
+   const {data,error}=await db.functions.invoke("recipe-suggestions",{body:{request}});
+   if(error)throw error;
+   if(!data?.recipe)throw new Error(data?.error||"No recipe response was returned.");
+   status.innerHTML=formatRecipeText(data.recipe);
+ }catch(e){
+   console.error("Recipe request failed:",e);
+   status.textContent="I couldn't get recipe ideas right now. Please try again.";
+ }finally{
+   btn.disabled=false;
+   btn.textContent="Find Recipes";
+ }
 }
-
-async function enterApp(user) {
-    currentUser = user;
-    showApp();
-    setSyncStatus("Connected to cloud");
-
-    await migrateLocalInventoryOnce();
-    await loadInventory();
-
-    startRealtime();
+function renderGrocery(){
+ const g=groceryNote(),selected=g.items.filter(i=>i.needed);
+ document.getElementById("shoppingList").innerHTML=selected.length?selected.map(i=>{const idx=g.items.indexOf(i);return `<div class="grocery-item"><input type="checkbox" ${i.done?"checked":""} onchange="togglePurchased(${idx})">${i.photoPath?`<img class="photo-thumb" data-photo-path="${esc(i.photoPath)}" alt="${esc(i.t)}" onclick="showPhotoModal(this.src)">`:""}<span style="${i.done?"text-decoration:line-through;opacity:.55":""}">${esc(i.t)}</span></div>`}).join(""):`<div class="empty" style="padding:18px">Your shopping list is empty.</div>`;
+ const cats=[...new Set(g.items.map(i=>i.category||"Other"))];
+ document.getElementById("masterGrocery").innerHTML=cats.map(cat=>`<div class="grocery-category">${esc(cat)}</div>`+g.items.map((i,idx)=>({i,idx})).filter(x=>(x.i.category||"Other")===cat).sort((a,b)=>a.i.t.localeCompare(b.i.t)).map(({i,idx})=>`<div class="grocery-item"><input type="checkbox" ${i.needed?"checked":""} onchange="toggleNeeded(${idx})">${i.photoPath?`<img class="photo-thumb" data-photo-path="${esc(i.photoPath)}" alt="${esc(i.t)}" onclick="showPhotoModal(this.src)">`:`<div class="photo-placeholder">📷</div>`}<span>${esc(i.t)}</span><button class="secondary smallbtn" onclick="pickGroceryPhoto(${idx})">${i.photoPath?"Change":"Photo"}</button><button class="secondary smallbtn" onclick="removeMasterGrocery(${idx})">Remove</button></div>`).join("")).join("");
+ hydratePhotoUrls(document.getElementById("groceryScreen"));
 }
+function toggleNeeded(i){const g=groceryNote();g.items[i].needed=!g.items[i].needed;if(!g.items[i].needed)g.items[i].done=false;g.modified=Date.now();persist();renderGrocery()}
+function togglePurchased(i){const g=groceryNote();g.items[i].done=!g.items[i].done;g.modified=Date.now();persist();renderGrocery()}
+function clearPurchased(){const g=groceryNote();g.items.forEach(i=>{if(i.needed&&i.done){i.needed=false;i.done=false}});g.modified=Date.now();persist();renderGrocery()}
+function addMasterGrocery(){const el=document.getElementById("newGroceryItem"),t=el.value.trim();if(!t)return;const g=groceryNote();const duplicate=g.items.some(i=>i.t.trim().toLowerCase()===t.toLowerCase());if(duplicate&&!confirm(`"${t}" is already on your Master Grocery List. Add it again anyway?`)){el.value="";return}g.items.push({t,category:document.getElementById("newGroceryCategory").value,needed:false,done:false,photoPath:""});g.modified=Date.now();el.value="";persist();renderGrocery()}
+function pickGroceryPhoto(i){groceryPhotoIndex=i;const input=document.getElementById("groceryPhotoInput");input.value="";input.click()}
+async function handleGroceryPhoto(event){
+ const file=event.target.files?.[0],idx=groceryPhotoIndex;groceryPhotoIndex=null;if(!file||idx===null)return;
+ const g=groceryNote(),item=g.items[idx];if(!item)return;const oldPath=item.photoPath||"";
+ try{setSyncStatus("Uploading grocery picture…");const path=await uploadAppPhoto(file,"grocery");item.photoPath=path;g.modified=Date.now();persist();renderGrocery();if(oldPath&&oldPath!==path)await deleteAppPhoto(oldPath)}
+ catch(e){console.error(e);alert("Could not add that picture: "+friendlyError(e))}
+}
+async function removeMasterGrocery(i){const g=groceryNote(),item=g.items[i];if(confirm(`Remove "${item.t}" from the permanent grocery list?`)){const path=item.photoPath||"";g.items.splice(i,1);g.modified=Date.now();persist();renderGrocery();if(path)await deleteAppPhoto(path)}}
+let currentIdeaTopicId=null;
+function ideasNote(){
+ let n=notes.find(n=>!n.trash&&n.title==="__IDEAS__");
+ if(!n){n={id:crypto.randomUUID(),title:"__IDEAS__",body:"",type:"check",items:[],pinned:false,trash:false,modified:Date.now()};notes.push(n);persist()}
+ n.items=(n.items||[]).map(i=>{
+   if(!i.thoughts)return{id:crypto.randomUUID(),title:i.t||"Untitled Idea",created:i.created||Date.now(),description:"",thoughts:[],checklist:[],photos:[]};
+   return{...i,description:i.description||"",thoughts:Array.isArray(i.thoughts)?i.thoughts:[],checklist:Array.isArray(i.checklist)?i.checklist.map(x=>({t:x.t||"",done:!!x.done,created:x.created||Date.now()})):[],photos:Array.isArray(i.photos)?i.photos.map(p=>typeof p==="string"?{path:p,created:Date.now(),caption:""}:{...p,caption:p.caption||""}):[]};
+ });
+ return n;
+}
+function showIdeas(){saveCurrent();currentIdeaTopicId=null;screens("ideasScreen");renderIdeas()}
+function renderIdeas(){
+ const n=ideasNote(),q=(document.getElementById("ideaSearch")?.value||"").trim().toLowerCase();
+ const topics=n.items.filter(i=>(i.title+" "+(i.description||"")+" "+(i.thoughts||[]).map(t=>t.t).join(" ")+" "+(i.checklist||[]).map(t=>t.t).join(" ")+" "+(i.photos||[]).map(p=>p.caption||"").join(" ")).toLowerCase().includes(q));
+ document.getElementById("ideasList").innerHTML=topics.length?topics.slice().reverse().map(i=>`<div class="idea-item"><button class="idea-topic-btn" onclick="openIdeaTopic('${i.id}')"><b>${esc(i.title)}</b><span>${(i.thoughts||[]).length} thought${(i.thoughts||[]).length===1?"":"s"} • ${(i.photos||[]).length} picture${(i.photos||[]).length===1?"":"s"} • ${(i.checklist||[]).length} task${(i.checklist||[]).length===1?"":"s"}</span></button><button class="danger smallbtn" onclick="deleteIdeaTopic('${i.id}')">×</button></div>`).join(""):`<div class="empty" style="padding:24px">${q?"No matching ideas.":"No ideas yet."}</div>`
+}
+function addIdeaTopic(){const el=document.getElementById("newIdeaTopic"),title=el.value.trim();if(!title)return;const n=ideasNote(),topic={id:crypto.randomUUID(),title,created:Date.now(),description:"",thoughts:[],checklist:[],photos:[]};n.items.push(topic);n.modified=Date.now();el.value="";persist();openIdeaTopic(topic.id)}
+function openIdeaTopic(id){const n=ideasNote(),topic=n.items.find(i=>i.id===id);if(!topic)return;currentIdeaTopicId=id;screens("ideaDetailScreen");document.getElementById("ideaDetailTitle").textContent="💡 "+topic.title;document.getElementById("ideaPhotoStatus").textContent="";document.getElementById("ideaDescriptionStatus").textContent="Autosaves as you type.";document.getElementById("ideaDescription").value=topic.description||"";renderIdeaChecklist();renderIdeaPhotos();renderIdeaThoughts()}
+function saveIdeaDescription(){const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;topic.description=document.getElementById("ideaDescription").value; n.modified=Date.now();persist();document.getElementById("ideaDescriptionStatus").textContent="Saved "+new Date().toLocaleTimeString()}
+function renderIdeaChecklist(){const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;const items=topic.checklist||[];document.getElementById("ideaChecklist").innerHTML=items.length?items.map((item,idx)=>`<div class="idea-check-item"><input type="checkbox" ${item.done?"checked":""} onchange="toggleIdeaTask(${idx})"><span style="${item.done?"text-decoration:line-through;opacity:.55":""}">${esc(item.t)}</span><button class="danger smallbtn" onclick="deleteIdeaTask(${idx})">×</button></div>`).join(""):`<div class="empty" style="padding:14px">No checklist items yet.</div>`}
+function addIdeaTask(){const el=document.getElementById("newIdeaTask"),text=el.value.trim();if(!text)return;const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;topic.checklist=topic.checklist||[];topic.checklist.push({t:text,done:false,created:Date.now()});n.modified=Date.now();el.value="";persist();renderIdeaChecklist()}
+function toggleIdeaTask(i){const n=ideasNote(),topic=n.items.find(x=>x.id===currentIdeaTopicId);if(!topic||!topic.checklist?.[i])return;topic.checklist[i].done=!topic.checklist[i].done;n.modified=Date.now();persist();renderIdeaChecklist()}
+function deleteIdeaTask(i){const n=ideasNote(),topic=n.items.find(x=>x.id===currentIdeaTopicId);if(topic&&topic.checklist?.[i]&&confirm("Delete this checklist item?")){topic.checklist.splice(i,1);n.modified=Date.now();persist();renderIdeaChecklist()}}
+function renderIdeaThoughts(){const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;const thoughts=topic.thoughts||[];document.getElementById("ideaThoughts").innerHTML=thoughts.length?thoughts.slice().reverse().map((t,r)=>{const idx=thoughts.length-1-r;return `<div class="idea-item"><div class="idea-text">${esc(t.t)}<div class="idea-time">${new Date(t.created).toLocaleString()}</div></div><button class="danger smallbtn" onclick="deleteIdeaThought(${idx})">×</button></div>`}).join(""):`<div class="empty" style="padding:24px">No thoughts yet. Add the first one above.</div>`}
+function renderIdeaPhotos(){const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;const photos=topic.photos||[],el=document.getElementById("ideaPhotos");el.innerHTML=photos.map((p,idx)=>`<div class="photo-card"><img data-photo-path="${esc(p.path)}" alt="Idea picture" onclick="showPhotoModal(this.src)"><button class="danger smallbtn" onclick="deleteIdeaPhoto(${idx});event.stopPropagation()">×</button><input class="photo-caption" value="${esc(p.caption||"")}" placeholder="Add a caption…" oninput="updateIdeaPhotoCaption(${idx},this.value)"></div>`).join("");hydratePhotoUrls(el)}
+function updateIdeaPhotoCaption(i,value){const n=ideasNote(),topic=n.items.find(x=>x.id===currentIdeaTopicId);if(!topic||!topic.photos?.[i])return;topic.photos[i].caption=value;n.modified=Date.now();persist()}
+function addIdeaThought(){const el=document.getElementById("newIdeaThought"),text=el.value.trim();if(!text)return;const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;topic.thoughts=topic.thoughts||[];topic.thoughts.push({t:text,created:Date.now()});n.modified=Date.now();el.value="";persist();renderIdeaThoughts()}
+function deleteIdeaThought(i){const n=ideasNote(),topic=n.items.find(x=>x.id===currentIdeaTopicId);if(topic&&confirm("Delete this thought?")){topic.thoughts.splice(i,1);n.modified=Date.now();persist();renderIdeaThoughts()}}
+function pickIdeaPhoto(){const input=document.getElementById("ideaPhotoInput");input.value="";input.click()}
+async function handleIdeaPhoto(event){const file=event.target.files?.[0];if(!file)return;const n=ideasNote(),topic=n.items.find(i=>i.id===currentIdeaTopicId);if(!topic)return;const status=document.getElementById("ideaPhotoStatus");try{status.textContent="Uploading picture…";const path=await uploadAppPhoto(file,`ideas/${topic.id}`);topic.photos=topic.photos||[];topic.photos.push({path,created:Date.now(),caption:""});n.modified=Date.now();persist();renderIdeaPhotos();status.textContent="Picture added.";setTimeout(()=>{if(status.textContent==="Picture added.")status.textContent=""},1800)}catch(e){console.error(e);status.textContent="Could not add picture.";alert("Could not add that picture: "+friendlyError(e))}}
+async function deleteIdeaPhoto(i){const n=ideasNote(),topic=n.items.find(x=>x.id===currentIdeaTopicId);if(!topic)return;const photo=(topic.photos||[])[i];if(!photo||!confirm("Delete this picture?"))return;topic.photos.splice(i,1);n.modified=Date.now();persist();renderIdeaPhotos();await deleteAppPhoto(photo.path)}
+async function deleteIdeaTopic(id){const n=ideasNote(),topic=n.items.find(i=>i.id===id);if(topic&&confirm(`Delete the idea "${topic.title}" and everything under it?`)){const paths=(topic.photos||[]).map(p=>p.path).filter(Boolean);n.items=n.items.filter(i=>i.id!==id);n.modified=Date.now();persist();renderIdeas();if(paths.length){try{const {error}=await db.storage.from(PHOTO_BUCKET).remove(paths);if(error)throw error;paths.forEach(p=>photoUrlCache.delete(p))}catch(e){console.error("Idea photo cleanup failed:",e)}}}}
+function filterPinned(){pinnedOnly=!pinnedOnly;render()}
+function showVoice(){saveCurrent();screens("voiceScreen")}
+function command(c){
+  const s=c.trim();if(!s){document.getElementById("voiceStatus").textContent="Say or type a command first.";return}
+  document.getElementById("voiceStatus").textContent="Heard: “"+s+"”";
+  let m=s.match(/^add (.+?) to (?:my |the )?grocery list[.!]?$/i);
+  if(m){let item=m[1].replace(/^a |^an /i,"");let g=notes.find(n=>!n.trash&&n.title.toLowerCase()==="grocery list");if(!g){g={id:crypto.randomUUID(),title:"Grocery List",type:"check",items:[],body:"",pinned:true,trash:false,modified:Date.now()};notes.push(g)}g.items.push({t:item.charAt(0).toUpperCase()+item.slice(1),category:"Other",needed:true,done:false,photoPath:""});g.modified=Date.now();persist();document.getElementById("voiceStatus").textContent="✓ Added “"+item+"” to Grocery List.";return}
+  m=s.match(/^create (?:a )?(?:new )?note called (.+)$/i);if(m){notes.push({id:crypto.randomUUID(),title:m[1],body:"",type:"text",items:[],pinned:false,trash:false,modified:Date.now()});persist();document.getElementById("voiceStatus").textContent="✓ Created note “"+m[1]+"”.";return}
+  m=s.match(/^add (?:a )?to-do[: ]+(.+)$/i);if(m){let n=notes.find(n=>!n.trash&&n.title==="To Do")||{id:crypto.randomUUID(),title:"To Do",body:"",type:"check",items:[],pinned:true,trash:false,modified:Date.now()};if(!notes.includes(n))notes.push(n);n.items.push({t:m[1],done:false});n.modified=Date.now();persist();document.getElementById("voiceStatus").textContent="✓ Added to To Do.";return}
+  m=s.match(/find (?:my )?note about (.+)/i);if(m){const q=m[1].toLowerCase(),n=notes.find(n=>!n.trash&&(n.title+" "+n.body).toLowerCase().includes(q));if(n)openNote(n.id);else document.getElementById("voiceStatus").textContent="I couldn't find a matching note.";return}
+  document.getElementById("voiceStatus").textContent="I’m not sure what that means. Try one of the examples below.";
+}
+function runTypedCommand(){command(document.getElementById("commandText").value)}
+function listen(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){document.getElementById("voiceStatus").textContent="Voice recognition isn't available in this browser. Type the command below instead.";return}
+  try{
+    const r=new SR();r.lang="en-US";r.interimResults=false;r.maxAlternatives=1;
+    r.onstart=()=>document.getElementById("voiceStatus").textContent="Listening…";
+    r.onerror=e=>document.getElementById("voiceStatus").textContent=e.error==="not-allowed"?"Microphone permission is off. Allow microphone access for this site and try again.":"Voice error: "+e.error;
+    r.onresult=e=>command(e.results[0][0].transcript);r.start();
+  }catch(e){document.getElementById("voiceStatus").textContent="Voice recognition could not start. You can type the command below."}
+}
+function showMore(){saveCurrent();screens("moreScreen");renderTrash()}
+function renderTrash(){const a=notes.filter(n=>n.trash);document.getElementById("trash").innerHTML=a.length?a.map(n=>`<div class="row"><span style="flex:1">${esc(n.title||"Untitled")}</span><button class="secondary" onclick="restore('${n.id}')">Restore</button><button class="danger" onclick="purge('${n.id}')">Delete</button></div>`).join(""):"Trash is empty."}
+function restore(id){const n=notes.find(n=>n.id===id);if(!n)return;n.trash=false;n.modified=Date.now();persist();renderTrash()}
+async function purge(id){if(confirm("Delete permanently? This cannot be undone.")){notes=notes.filter(n=>n.id!==id);localSave();await deleteCloudNote(id);renderTrash();render()}}
+function setFont(v){document.body.className=v;localStorage.setItem("ocn_font",v)}
+document.getElementById("fontSize").value=localStorage.getItem("ocn_font")||"";
+setFont(localStorage.getItem("ocn_font")||"");
+document.getElementById("authPassword").addEventListener("keydown",e=>{if(e.key==="Enter")signIn()});
+document.getElementById("newPassword").addEventListener("keydown",e=>{if(e.key==="Enter")updatePassword()});
+document.getElementById("newItem").addEventListener("keydown",e=>{if(e.key==="Enter")addChecklistItem()});
+document.getElementById("newGroceryItem").addEventListener("keydown",e=>{if(e.key==="Enter")addMasterGrocery()});
+document.getElementById("newIdeaTopic").addEventListener("keydown",e=>{if(e.key==="Enter")addIdeaTopic()});
+document.getElementById("newIdeaThought").addEventListener("keydown",e=>{if(e.key==="Enter")addIdeaThought()});
+document.getElementById("newIdeaTask").addEventListener("keydown",e=>{if(e.key==="Enter")addIdeaTask()});
+document.getElementById("ideaDescription").addEventListener("input",saveIdeaDescription);
 
-db.auth.onAuthStateChange(async (event, session) => {
-    if (session?.user) {
-        await enterApp(session.user);
-    } else {
-        currentUser = null;
-        inventory = [];
-        selectedLocationFilter = "";
-
-        renderLocations();
-        renderInventory();
-        refreshLocationTools();
-
-        if (realtimeChannel) {
-            db.removeChannel(realtimeChannel);
-            realtimeChannel = null;
-        }
-
-        showAuth();
-    }
+async function updatePassword(){
+  const password=document.getElementById("newPassword").value;
+  if(password.length<8){authMessage("Use a password with at least 8 characters.");return}
+  try{
+    authMessage("Changing password…");
+    const {error}=await db.auth.updateUser({password});
+    if(error){authMessage(friendlyError(error));return}
+    recoveryMode=false;document.getElementById("resetBox").classList.add("hidden");
+    authMessage("");showApp();await initializeSync();startRealtime();
+  }catch(e){authMessage(friendlyError(e))}
+}
+function enterRecovery(session){
+  recoveryMode=true;currentUser=session?.user||currentUser;
+  showAuth("Enter your new password below.");
+  document.getElementById("resetBox").classList.remove("hidden");
+  setTimeout(()=>document.getElementById("newPassword").focus(),50);
+}
+async function boot(){
+  try{
+    const {data,error}=await db.auth.getSession();if(error)throw error;
+    const session=data?.session;
+    if(session?.user){currentUser=session.user;if(!recoveryMode){showApp();await initializeSync();startRealtime()}}
+    else showAuth();
+  }catch(e){console.error("Startup failed:",e);showAuth(friendlyError(e,"Could not connect to the cloud."))}
+  finally{booting=false}
+}
+db.auth.onAuthStateChange((event,session)=>{
+  if(event==="PASSWORD_RECOVERY"){enterRecovery(session);return}
+  if(booting)return;
+  if(event==="SIGNED_OUT"||!session){stopRealtime();currentUser=null;current=null;notes=[];recoveryMode=false;showAuth(event==="SIGNED_OUT"?"Signed out.":"");return}
+  if(event==="SIGNED_IN"&&session?.user&&!recoveryMode){currentUser=session.user;showApp();startRealtime()}
 });
 
-(async function boot() {
-    const { data } = await db.auth.getSession();
+window.addEventListener("online",async()=>{setSyncStatus("Back online — syncing…");await syncAllToCloud();await refreshFromCloud()});
+window.addEventListener("offline",()=>setSyncStatus("Offline — saved on this device"));
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&currentUser&&!recoveryMode)refreshFromCloud()});
 
-    if (data.session?.user) {
-        await enterApp(data.session.user);
-    } else {
-        showAuth();
-        renderLocations();
-        renderInventory();
-        refreshLocationTools();
-    }
-})();
+boot();
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load",async()=>{
+    try{
+      const reg=await navigator.serviceWorker.register("./service-worker.js?v=9",{updateViaCache:"none"});
+      await reg.update().catch(()=>{});
+      let reloading=false;
+      navigator.serviceWorker.addEventListener("controllerchange",()=>{
+        if(reloading)return;
+        reloading=true;
+        window.location.reload();
+      });
+    }catch(e){console.warn("Service worker registration failed",e)}
+  });
+}
 </script>
-
 </body>
 </html>
