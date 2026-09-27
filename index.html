@@ -92,6 +92,10 @@ body.xlarge{font-size:22px}
 .recipe-coming h2,.recipe-coming h3,.recipe-coming h4{font-family:Georgia,serif;color:var(--brown);margin:14px 0 7px}
 .recipe-coming h2{font-size:22px}.recipe-coming h3{font-size:19px}.recipe-coming h4{font-size:17px}
 .recipe-coming strong{color:#3d281b}
+.recipe-result-btn{display:block;width:100%;text-align:left;margin:9px 0;padding:13px 14px;border-radius:12px;background:#fff9d9;color:#392619;border:1px solid #d5c98e;box-shadow:0 1px 4px #4b2d1b18}
+.recipe-result-btn b{display:block;font-family:Georgia,serif;font-size:18px;margin-bottom:4px}
+.recipe-result-btn span{display:block;font-size:13px;font-weight:400;opacity:.75}
+.recipe-back{margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -503,20 +507,107 @@ function formatRecipeText(text){
  return s;
 }
 
+let lastRecipeRequest="";
+let lastRecipeIdeas=[];
+
+function cleanRecipeTitle(s){
+ return (s||"")
+   .replace(/^#{1,6}\s*/,"")
+   .replace(/^\s*\d+[\.\):\-]\s*/,"")
+   .replace(/^\s*[-*•]\s*/,"")
+   .replace(/\*\*/g,"")
+   .replace(/^[🍳🥘🍲🍛🍝🥗🌮🍜🍚🍗🥩🐟]+\s*/u,"")
+   .trim();
+}
+
+function extractRecipeIdeas(text){
+ const lines=(text||"").split(/\r?\n/);
+ const found=[];
+ for(const raw of lines){
+   const line=raw.trim();
+   let m=line.match(/^##+\s+(.+)$/);
+   if(!m)m=line.match(/^\s*\d+[\.\):\-]\s+\*\*(.+?)\*\*/);
+   if(!m)m=line.match(/^\s*\d+[\.\):\-]\s+(.+)$/);
+   if(!m)m=line.match(/^\s*[-*•]\s+\*\*(.+?)\*\*/);
+   if(!m)continue;
+   const title=cleanRecipeTitle(m[1]);
+   if(!title)continue;
+   if(/^(recipe ideas?|recipes?|ingredients?|instructions?|directions?|method|steps?|notes?|serves?|prep|cook)/i.test(title))continue;
+   if(!found.some(x=>x.toLowerCase()===title.toLowerCase()))found.push(title);
+ }
+ return found.slice(0,10);
+}
+
+function renderRecipeChoices(raw){
+ const status=document.getElementById("recipeStageOneStatus");
+ lastRecipeIdeas=extractRecipeIdeas(raw);
+ if(!lastRecipeIdeas.length){
+   status.innerHTML=formatRecipeText(raw);
+   return;
+ }
+ status.innerHTML="<b>Tap a recipe to see the full recipe:</b>"+
+   lastRecipeIdeas.map((title,i)=>`<button type="button" class="recipe-result-btn" onclick="openRecommendedRecipe(${i})"><b>${esc(title)}</b><span>Tap for ingredients and step-by-step directions</span></button>`).join("");
+}
+
+async function openRecommendedRecipe(index){
+ const title=lastRecipeIdeas[index];
+ const status=document.getElementById("recipeStageOneStatus");
+ const btn=document.getElementById("findRecipesBtn");
+ if(!title||!currentUser)return;
+ btn.disabled=true;
+ status.textContent=`Opening ${title}…`;
+ try{
+   const detailRequest=`Give me the complete recipe for "${title}". My original request was: ${lastRecipeRequest}
+
+Return one complete recipe only. Include:
+# ${title}
+## Ingredients
+List exact ingredient amounts.
+## Instructions
+Give clear numbered cooking steps.
+## Time
+Give prep time and cook time.
+## Servings
+Give the number of servings.
+Keep it practical and easy to follow.`;
+   const {data,error}=await db.functions.invoke("recipe-suggestions",{body:{request:detailRequest}});
+   if(error)throw error;
+   if(!data?.recipe)throw new Error(data?.error||"No recipe response was returned.");
+   status.innerHTML=`<button type="button" class="secondary recipe-back" onclick="showRecipeChoices()">← Recipe Ideas</button>`+formatRecipeText(data.recipe);
+ }catch(e){
+   console.error("Recipe detail request failed:",e);
+   status.innerHTML=`<button type="button" class="secondary recipe-back" onclick="showRecipeChoices()">← Recipe Ideas</button><br>I couldn't open that recipe right now. Please try again.`;
+ }finally{
+   btn.disabled=false;
+ }
+}
+
+function showRecipeChoices(){
+ const status=document.getElementById("recipeStageOneStatus");
+ if(!lastRecipeIdeas.length){status.textContent="Tap Find Recipes to get some ideas.";return}
+ status.innerHTML="<b>Tap a recipe to see the full recipe:</b>"+
+   lastRecipeIdeas.map((title,i)=>`<button type="button" class="recipe-result-btn" onclick="openRecommendedRecipe(${i})"><b>${esc(title)}</b><span>Tap for ingredients and step-by-step directions</span></button>`).join("");
+}
+
 async function findRecipes(){
  const request=document.getElementById("recipeRequest").value.trim();
  const status=document.getElementById("recipeStageOneStatus");
  const btn=document.getElementById("findRecipesBtn");
  if(!request){status.textContent="Type what kind of meal you want first.";return}
  if(!currentUser){status.textContent="Please sign in before asking for recipes.";return}
+ lastRecipeRequest=request;
+ lastRecipeIdeas=[];
  btn.disabled=true;
  btn.textContent="Finding Recipes…";
  status.textContent="Finding recipe ideas…";
  try{
-   const {data,error}=await db.functions.invoke("recipe-suggestions",{body:{request}});
+   const ideaRequest=`${request}
+
+Give me 5 recipe ideas. IMPORTANT: Put each recipe name on its own line beginning with ## followed by the recipe name. Under each name, give only a short one-sentence description. Do not give the full recipe yet.`;
+   const {data,error}=await db.functions.invoke("recipe-suggestions",{body:{request:ideaRequest}});
    if(error)throw error;
    if(!data?.recipe)throw new Error(data?.error||"No recipe response was returned.");
-   status.innerHTML=formatRecipeText(data.recipe);
+   renderRecipeChoices(data.recipe);
  }catch(e){
    console.error("Recipe request failed:",e);
    status.textContent="I couldn't get recipe ideas right now. Please try again.";
@@ -525,6 +616,7 @@ async function findRecipes(){
    btn.textContent="Find Recipes";
  }
 }
+
 function renderGrocery(){
  const g=groceryNote(),selected=g.items.filter(i=>i.needed);
  document.getElementById("shoppingList").innerHTML=selected.length?selected.map(i=>{const idx=g.items.indexOf(i);return `<div class="grocery-item"><input type="checkbox" ${i.done?"checked":""} onchange="togglePurchased(${idx})">${i.photoPath?`<img class="photo-thumb" data-photo-path="${esc(i.photoPath)}" alt="${esc(i.t)}" onclick="showPhotoModal(this.src)">`:""}<span style="${i.done?"text-decoration:line-through;opacity:.55":""}">${esc(i.t)}</span></div>`}).join(""):`<div class="empty" style="padding:18px">Your shopping list is empty.</div>`;
