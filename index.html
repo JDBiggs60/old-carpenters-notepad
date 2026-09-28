@@ -172,7 +172,13 @@ body.xlarge{font-size:22px}
 </div>
 
 <div id="groceryShoppingPanel">
-  <div class="card"><h3>🛒 Shopping List</h3><div class="notice">Items selected from the Master List appear here. Check them off as they go in the cart.</div><div id="shoppingList"></div><div class="row"><button class="secondary" onclick="clearPurchased()">Clear Purchased</button></div></div>
+  <div class="card">
+    <h3>🛒 Shopping List</h3>
+    <div class="notice">Type anything below to add it instantly, or select items from the Master List.</div>
+    <div class="row"><input id="quickGroceryItem" placeholder="Quick add item…"><button onclick="quickAddGrocery()">Add</button></div>
+    <div id="shoppingList"></div>
+    <div class="row"><button class="secondary" onclick="clearPurchased()">Clear Purchased</button></div>
+  </div>
 </div>
 
 <div id="groceryMasterPanel" class="hidden">
@@ -628,6 +634,18 @@ function toggleNeeded(i){const g=groceryNote();g.items[i].needed=!g.items[i].nee
 function togglePurchased(i){const g=groceryNote();g.items[i].done=!g.items[i].done;g.modified=Date.now();persist();renderGrocery()}
 function clearPurchased(){const g=groceryNote();g.items.forEach(i=>{if(i.needed&&i.done){i.needed=false;i.done=false}});g.modified=Date.now();persist();renderGrocery()}
 function addMasterGrocery(){const el=document.getElementById("newGroceryItem"),t=el.value.trim();if(!t)return;const g=groceryNote();const duplicate=g.items.some(i=>i.t.trim().toLowerCase()===t.toLowerCase());if(duplicate&&!confirm(`"${t}" is already on your Master Grocery List. Add it again anyway?`)){el.value="";return}g.items.push({t,category:document.getElementById("newGroceryCategory").value,needed:false,done:false,photoPath:""});g.modified=Date.now();el.value="";persist();renderGrocery()}
+function quickAddGrocery(){
+ const el=document.getElementById("quickGroceryItem"),t=el.value.trim();if(!t)return;
+ const g=groceryNote();
+ const existing=g.items.find(i=>i.t.trim().toLowerCase()===t.toLowerCase());
+ if(existing){
+  if(existing.needed){alert(`"${existing.t}" is already on your Shopping List.`);el.value="";return}
+  existing.needed=true;existing.done=false;
+ }else{
+  g.items.push({t:t.charAt(0).toUpperCase()+t.slice(1),category:"Other",needed:true,done:false,photoPath:""});
+ }
+ g.modified=Date.now();el.value="";persist();renderGrocery();
+}
 function pickGroceryPhoto(i){groceryPhotoIndex=i;const input=document.getElementById("groceryPhotoInput");input.value="";input.click()}
 async function handleGroceryPhoto(event){
  const file=event.target.files?.[0],idx=groceryPhotoIndex;groceryPhotoIndex=null;if(!file||idx===null)return;
@@ -702,6 +720,7 @@ document.getElementById("authPassword").addEventListener("keydown",e=>{if(e.key=
 document.getElementById("newPassword").addEventListener("keydown",e=>{if(e.key==="Enter")updatePassword()});
 document.getElementById("newItem").addEventListener("keydown",e=>{if(e.key==="Enter")addChecklistItem()});
 document.getElementById("newGroceryItem").addEventListener("keydown",e=>{if(e.key==="Enter")addMasterGrocery()});
+document.getElementById("quickGroceryItem").addEventListener("keydown",e=>{if(e.key==="Enter")quickAddGrocery()});
 document.getElementById("newIdeaTopic").addEventListener("keydown",e=>{if(e.key==="Enter")addIdeaTopic()});
 document.getElementById("newIdeaThought").addEventListener("keydown",e=>{if(e.key==="Enter")addIdeaThought()});
 document.getElementById("newIdeaTask").addEventListener("keydown",e=>{if(e.key==="Enter")addIdeaTask()});
