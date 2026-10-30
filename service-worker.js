@@ -1,6 +1,7 @@
-const CACHE = "old-carpenters-notepad-v4";
+const CACHE = "old-carpenters-notepad-v5";
 const APP_SHELL = [
   "./index.html",
+  "./measurements.js",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png"
@@ -68,4 +69,3 @@ self.addEventListener("fetch", event => {
       .catch(() => caches.match(event.request))
   );
 });
-

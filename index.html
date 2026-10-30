@@ -99,6 +99,32 @@ body.xlarge{font-size:22px}
 
 .notepad-float{position:fixed;left:max(14px,calc((100vw - 520px)/2 + 14px));bottom:calc(76px + env(safe-area-inset-bottom));display:flex;gap:6px;z-index:6}.notepad-float button{font-size:13px;padding:10px;box-shadow:0 2px 7px #0004}.app{padding-bottom:150px}.screen{padding-bottom:60px}.backup-status{white-space:pre-wrap;overflow-wrap:anywhere}.row.wrap{flex-wrap:wrap}
 @media print{.notepad-float,nav,.fab{display:none!important}}
+
+/* Measurements & Sketches */
+.app.ms-wide{max-width:1100px}
+nav.ms-nav{grid-template-columns:repeat(5,1fr)}
+.ms-toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;background:#fff6c7cc;position:sticky;top:0;z-index:4}
+.ms-toolbar button,.ms-tools button{padding:10px 11px;font-size:13px;min-height:44px}
+.ms-tools{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;background:#fff9d9;border-bottom:1px solid #d5c98e}
+.ms-tools button.active,.ms-tabs button.active,.grocery-tabs button.active{background:var(--brown);color:#fff}
+.ms-canvas-wrap{position:relative;margin:10px 12px;background:#fff;border:1px solid #c9b979;border-radius:12px;height:min(62vh,560px);touch-action:none;overflow:hidden}
+#msCanvas{width:100%;height:100%;display:block;touch-action:none}
+.ms-statusrow{display:flex;justify-content:space-between;gap:8px;padding:6px 14px;font-size:12px;opacity:.8}
+.ms-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 12px;padding:5px;background:#fff9d9;border:1px solid #d5c98e;border-radius:14px}
+.ms-tabs button{background:#e9dfb0;color:#392619;padding:10px 4px;font-size:12px}
+.ms-panel{position:fixed;z-index:40;left:50%;transform:translateX(-50%);bottom:calc(70px + env(safe-area-inset-bottom));width:min(520px,94vw);max-height:70vh;overflow:auto;background:#fff9d9;border:1px solid #d5c98e;border-radius:16px;box-shadow:0 8px 28px #0005;padding:14px}
+.ms-panel .panel-close{float:right}
+.ms-table{width:100%;border-collapse:collapse;font-size:13px}
+.ms-table th,.ms-table td{border-bottom:1px solid #d7c77b;padding:6px 4px;vertical-align:top}
+.ms-table input{padding:8px;border-radius:8px}
+.ms-list-actions{white-space:nowrap}
+.ms-photo-stage{position:relative;width:100%;overflow:auto;background:#111;border-radius:12px}
+#msPhotoImg{display:none}
+#msPhotoCanvas{width:100%;height:auto;touch-action:none;display:block}
+.ms-drawing-tabs{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 8px}
+label.ms-field{display:flex;flex-direction:column;gap:4px;flex:1;font-size:13px;font-weight:650}
+@media(max-width:700px){.ms-tools{overflow:auto;flex-wrap:nowrap}.app.ms-wide{max-width:520px}}
+@media print{.ms-toolbar,.ms-tools,.ms-tabs,nav,.notepad-float{display:none!important}#msCanvas{max-width:100%}}
 </style>
 </head>
 <body>
@@ -241,21 +267,220 @@ body.xlarge{font-size:22px}
 <div class="card"><h3>Backup &amp; Restore</h3><p>Download your notes, lists, Ideas and every saved photo in one backup file.</p><div class="row wrap"><button id="notepadBackupDownload" onclick="downloadNotepadBackup()">Download Full Backup</button><button class="secondary" onclick="document.getElementById('notepadBackupFile').click()">Restore Missing Notes &amp; Items</button></div><input id="notepadBackupFile" class="hidden" type="file" accept="application/json,.json" onchange="restoreNotepadBackup(event)"><p class="help">Restore adds missing notes and missing Grocery or Ideas entries. Existing entries stay as they are. Use a backup from the same account. Make a fresh backup first.</p><p id="notepadBackupStatus" class="backup-status" role="status" aria-live="polite"></p></div>
 <div class="card"><h3>Settings</h3><label>Text size</label><select id="fontSize" onchange="setFont(this.value)"><option value="">Normal</option><option value="large">Large</option><option value="xlarge">Extra Large</option></select></div>
 <div class="card"><h3>Trash</h3><div id="trash"></div></div>
-<div class="card help"><h3>About</h3><b>Old Carpenter's Notepad</b><br>Simple notes. No nonsense.<br><br><b>Version 1.4.2026.10.10</b><br><br>Your notes are saved automatically on this device and synchronized to your private cloud account.</div>
+<div class="card help"><h3>About</h3><b>Old Carpenter's Notepad</b><br>Simple notes. No nonsense.<br><br><b>Version 1.5.2026.10.30</b><br><br>Your notes are saved automatically on this device and synchronized to your private cloud account.</div>
 </section>
+
+<section id="measureScreen" class="screen hidden">
+  <div class="toolbar">
+    <button onclick="MS.newProject()">+ New Project</button>
+    <button class="secondary" onclick="MS.renderProjectList()">Open / Refresh</button>
+  </div>
+  <div class="card">
+    <h3>📏 Measurements &amp; Sketches</h3>
+    <div class="notice">Simple shop drawings with automatic dimensions. Enter real sizes (like 36" × 24") and the drawing updates to match.</div>
+    <input id="msSearch" placeholder="Search projects…" oninput="MS.renderProjectList()">
+  </div>
+  <div id="msProjectList"></div>
+</section>
+
+<section id="measureProjectScreen" class="screen hidden">
+  <div class="ms-toolbar">
+    <button class="secondary" onclick="MS.backToProjectList()">← Projects</button>
+    <button onclick="MS.saveSketches()">Save</button>
+    <button class="secondary" onclick="MS.undo()">Undo</button>
+    <button class="secondary" onclick="MS.redo()">Redo</button>
+    <button class="secondary" onclick="MS.printProject()">Print</button>
+    <button class="secondary" onclick="MS.exportDrawingSvg()">Export SVG</button>
+    <button class="secondary" onclick="MS.exportDrawingPng()">Export PNG</button>
+    <button class="secondary" onclick="MS.exportProjectJson()">Export Project</button>
+    <button class="secondary" onclick="MS.openHelp()">Help</button>
+  </div>
+  <div class="card" style="margin-bottom:8px">
+    <h3 id="msProjectTitle">Project</h3>
+    <div class="ms-statusrow"><span id="msUnsaved">Saved</span><span id="msUnitLabel">inches</span></div>
+    <div class="row wrap">
+      <button class="secondary smallbtn" onclick="MS.renameProject()">Rename</button>
+      <button class="secondary smallbtn" onclick="MS.duplicateProject()">Duplicate</button>
+      <button class="danger smallbtn" onclick="MS.deleteProjectFromList()">Delete</button>
+      <label class="ms-field">Units
+        <select id="msUnit" onchange="MS.changeUnits()"><option value="in">Inches</option><option value="mm">Millimeters</option></select>
+      </label>
+      <label class="ms-field">Display precision
+        <select id="msPrecision" onchange="MS.changePrecision()">
+          <option value="1/4">Nearest 1/4"</option>
+          <option value="1/8">Nearest 1/8"</option>
+          <option value="1/16" selected>Nearest 1/16"</option>
+          <option value="decimal">Decimal inches</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <div class="ms-tabs">
+    <button id="msTabBtn_draw" class="active" onclick="MS.showMsTab('draw')">Draw</button>
+    <button id="msTabBtn_list" onclick="MS.showMsTab('list')">List</button>
+    <button id="msTabBtn_photos" onclick="MS.showMsTab('photos')">Photos</button>
+    <button id="msTabBtn_notes" onclick="MS.showMsTab('notes')">Notes</button>
+    <button id="msTabBtn_help" onclick="MS.showMsTab('help')">Help</button>
+  </div>
+
+  <div id="msTab_draw">
+    <div class="ms-drawing-tabs" id="msDrawingTabs"></div>
+    <div class="ms-tools" role="toolbar" aria-label="Drawing tools">
+      <button type="button" data-ms-tool="select" class="active" onclick="MS.setTool('select')">Select</button>
+      <button type="button" data-ms-tool="move" onclick="MS.setTool('move')">Move</button>
+      <button type="button" data-ms-tool="line" onclick="MS.setTool('line')">Line</button>
+      <button type="button" data-ms-tool="rect" onclick="MS.setTool('rect')">Rectangle</button>
+      <button type="button" data-ms-tool="circle" onclick="MS.setTool('circle')">Circle</button>
+      <button type="button" data-ms-tool="ellipse" onclick="MS.setTool('ellipse')">Ellipse</button>
+      <button type="button" data-ms-tool="polyline" onclick="MS.setTool('polyline')">Polyline</button>
+      <button type="button" class="secondary" onclick="MS.finishPolyline()">End Polyline</button>
+      <button type="button" data-ms-tool="pencil" onclick="MS.setTool('pencil')">Pencil</button>
+      <button type="button" data-ms-tool="text" onclick="MS.setTool('text')">Text</button>
+      <button type="button" data-ms-tool="eraser" onclick="MS.setTool('eraser')">Eraser</button>
+      <button type="button" data-ms-tool="dimension" onclick="MS.setTool('dimension')">Dimension</button>
+      <button type="button" data-ms-tool="angle" onclick="MS.setTool('angle')">Angle</button>
+      <button type="button" data-ms-tool="pan" onclick="MS.setTool('pan')">Pan</button>
+      <button type="button" class="secondary" onclick="MS.zoomBy(1.2)">Zoom +</button>
+      <button type="button" class="secondary" onclick="MS.zoomBy(0.8)">Zoom −</button>
+      <button type="button" class="secondary" onclick="MS.fitDrawing()">Fit</button>
+      <button type="button" class="secondary" onclick="MS.toggleGrid()">Grid</button>
+      <button type="button" class="secondary" onclick="MS.toggleSnap()">Snap</button>
+      <button type="button" class="secondary" onclick="MS.toggleRulers()">Rulers</button>
+      <button type="button" class="secondary" onclick="MS.toggleDims()">Show/Hide Dims</button>
+      <button type="button" onclick="MS.openDrawFromMeasures()">Draw From Measurements</button>
+      <label class="ms-field" style="min-width:90px">Pencil<input id="msPencilWidth" type="number" min="0.04" max="0.4" step="0.02" value="0.08"></label>
+      <button type="button" class="secondary smallbtn" onclick="MS.renameDrawingPage()">Rename Page</button>
+    </div>
+    <div class="ms-canvas-wrap"><canvas id="msCanvas" aria-label="Drawing canvas"></canvas></div>
+    <div class="card" id="msSelectionInfo"><div class="notice">Select a shape to edit its real-world size.</div></div>
+  </div>
+
+  <div id="msTab_list" class="hidden">
+    <div class="card">
+      <h3>Measurement List</h3>
+      <div class="notice">Organize board sizes here. Dictation works through your keyboard’s microphone button.</div>
+      <div class="row wrap">
+        <button onclick="MS.addListItem()">+ Add Item</button>
+        <button class="secondary" onclick="MS.copyListToProject()">Copy to Another Project</button>
+      </div>
+      <div style="overflow:auto">
+        <table class="ms-table">
+          <thead><tr><th>Item</th><th>Qty</th><th>Length</th><th>Width</th><th>Thickness</th><th>Notes</th><th></th></tr></thead>
+          <tbody id="msListBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Voice / Dictation Measurements</h3>
+      <div class="notice">Use your phone keyboard’s dictation, or type. Example: “Two boards, thirty-six and a half inches long, five and a quarter inches wide, three quarters thick.”</div>
+      <textarea id="msVoiceInput" placeholder="Dictate or type measurements here…"></textarea>
+      <div class="row"><button onclick="MS.runVoiceParse()">Interpret</button></div>
+      <div id="msVoiceConfirm"></div>
+    </div>
+  </div>
+
+  <div id="msTab_photos" class="hidden">
+    <div class="card">
+      <h3>Photographs</h3>
+      <div class="notice">Import a shop photo or an Apple Measure screenshot. Arrows you add are reference marks you type in — the photo itself does not establish true scale.</div>
+      <div class="row"><button class="secondary" onclick="MS.pickPhoto()">📷 Add Photo / Screenshot</button><span id="msPhotoStatus" class="photo-note"></span></div>
+      <input id="msPhotoInput" class="hidden" type="file" accept="image/*" onchange="if(event.target.files[0])MS.addPhoto(event.target.files[0])">
+      <div id="msPhotoGrid" class="photo-grid"></div>
+    </div>
+  </div>
+
+  <div id="msTab_notes" class="hidden">
+    <div class="card">
+      <h3>Project Notes</h3>
+      <label class="ms-field">Description<textarea id="msProjectDesc" placeholder="Optional project description…"></textarea></label>
+      <label class="ms-field">Written notes<textarea id="msProjectNotes" placeholder="Shop notes, material reminders, assembly thoughts…"></textarea></label>
+      <div class="row"><button onclick="MS.saveProjectFields()">Save Notes</button></div>
+    </div>
+  </div>
+
+  <div id="msTab_help" class="hidden">
+    <div class="card help">
+      <h3>Quick Help</h3>
+      <p><b>1. Create a project</b> — From Measurements &amp; Sketches, tap New Project and name it (Kitchen Cabinet, Bluebird House, etc.).</p>
+      <p><b>2. Draw a rectangle from sizes</b> — Tap Draw From Measurements, choose Rectangle, enter Width 36 and Height 24, then Create. Dimension arrows appear automatically.</p>
+      <p><b>3. Change a size</b> — Select the rectangle, change Width to 42, tap Update Size. The shape and the 42" dimension both change.</p>
+      <p><b>4. Manual dimension arrows</b> — Choose Dimension, then tap the first point and the second point. The measured length appears automatically.</p>
+      <p><b>5. Photos</b> — Photos tab → Add Photo. Tap the photo to place reference arrows and type the size.</p>
+      <p><b>6. Dictation</b> — On List tab, dictate into the text box with your keyboard mic, then Interpret and confirm.</p>
+      <p><b>7. Save / Print</b> — Tap Save often. Print makes a fit-to-page layout (not labeled as actual size).</p>
+    </div>
+  </div>
+</section>
+
+<div id="msDrawPanel" class="ms-panel hidden">
+  <button type="button" class="secondary panel-close" onclick="MS.closePanel()">Close ×</button>
+  <h3>Draw From Measurements</h3>
+  <div class="notice">Enter real sizes. The drawing is created to match.</div>
+  <label class="ms-field">Shape
+    <select id="msShapeType" onchange="MS.updateShapeFields()">
+      <option value="rect">Rectangle</option>
+      <option value="circle">Circle</option>
+      <option value="line">Straight Line</option>
+      <option value="triangle">Right Triangle</option>
+      <option value="gable">Simple Gable Roof</option>
+      <option value="board">Woodworking Board (front + edge)</option>
+    </select>
+  </label>
+  <div class="row"><label class="ms-field" id="msLabelA">Width<input id="msInA" placeholder='36 or 36 1/2'></label></div>
+  <div class="row" id="msRowB"><label class="ms-field" id="msLabelB">Height<input id="msInB" placeholder='24'></label></div>
+  <div class="row hidden" id="msRowC"><label class="ms-field" id="msLabelC">Thickness<input id="msInC" placeholder='3/4'></label></div>
+  <div id="msDrawErr" class="authmsg"></div>
+  <div class="row"><button onclick="MS.createFromMeasurements()">Create Drawing</button></div>
+</div>
+
+<div id="msPhotoPanel" class="ms-panel hidden">
+  <button type="button" class="secondary panel-close" onclick="MS.closePanel()">Close ×</button>
+  <h3>Annotate Photograph</h3>
+  <p id="msPhotoWarn" class="notice"></p>
+  <div class="row wrap">
+    <button class="secondary" onclick="MS.setPhotoTool('hdim')">Horizontal</button>
+    <button class="secondary" onclick="MS.setPhotoTool('vdim')">Vertical</button>
+    <button class="secondary" onclick="MS.setPhotoTool('adim')">Aligned</button>
+    <button class="secondary" onclick="MS.setPhotoTool('line')">Line</button>
+    <button class="secondary" onclick="MS.setPhotoTool('circle')">Circle</button>
+    <button class="secondary" onclick="MS.setPhotoTool('text')">Text</button>
+    <button class="secondary" onclick="MS.undoPhoto()">Undo</button>
+    <button class="secondary" onclick="MS.redoPhoto()">Redo</button>
+    <button class="secondary" onclick="MS.exportAnnotatedPhoto()">Export Image</button>
+  </div>
+  <div class="ms-photo-stage">
+    <img id="msPhotoImg" alt="">
+    <canvas id="msPhotoCanvas"></canvas>
+  </div>
+</div>
+
+<div id="msHelpPanel" class="ms-panel hidden">
+  <button type="button" class="secondary panel-close" onclick="MS.closePanel()">Close ×</button>
+  <h3>Measurements &amp; Sketches Help</h3>
+  <div class="help">
+    <p>Think of this like a simple paint program that understands inches.</p>
+    <p><b>Automatic dimensions:</b> shapes created from measurements keep dimension arrows attached. If you change 36" to 42", the rectangle grows and the label becomes 42".</p>
+    <p><b>Fractions:</b> type 36 1/2, 5 1/4, 3/4, or 12.75. Switch inches/mm anytime — the real size stays the same; only the label changes.</p>
+    <p><b>Freehand pencil:</b> useful for quick sketches. Freehand lines are not treated as precise measured geometry.</p>
+    <p><b>Photos / Apple Measure screenshots:</b> import as pictures, then type reference arrows. The app does not read scale from the camera.</p>
+  </div>
+</div>
 
 <div id="photoModal" class="photo-modal hidden" onclick="closePhotoModal()"><button class="close-photo" onclick="closePhotoModal();event.stopPropagation()">×</button><img id="photoModalImg" alt="Large photo" onclick="event.stopPropagation()"></div>
 
 <div class="notepad-float" role="group" aria-label="Quick navigation"><button onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ Top</button><button onclick="saveAndHome()">🏠 Home</button></div>
-<nav>
+<nav class="ms-nav">
 <button onclick="showNotes()"><b>📝</b>Notes</button>
 <button onclick="openGrocery()"><b>🛒</b>Grocery</button>
 <button onclick="showIdeas()"><b>💡</b>Ideas</button>
+<button onclick="MS.showMeasurements()"><b>📏</b>Measure</button>
 <button onclick="showMore()"><b>⚙️</b>More</button>
 </nav>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./measurements.js?v=16"></script>
 <script>
 const SUPABASE_URL="https://gupquxmhdrpwqvyuirsl.supabase.co";
 const SUPABASE_KEY="sb_publishable_TwCowZOvcHHKArXG5ncgqg_1fRFBo-A";
@@ -465,11 +690,12 @@ async function deleteAppPhoto(path){
 function showPhotoModal(src){if(!src)return;document.getElementById("photoModalImg").src=src;document.getElementById("photoModal").classList.remove("hidden")}
 function closePhotoModal(){document.getElementById("photoModal").classList.add("hidden");document.getElementById("photoModalImg").src=""}
 function esc(s){return(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-function screens(id){["notesScreen","editorScreen","voiceScreen","groceryScreen","ideasScreen","ideaDetailScreen","moreScreen","helpScreen"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id))}
-function showNotes(){saveCurrent();screens("notesScreen");render()}
+function screens(id){["notesScreen","editorScreen","voiceScreen","groceryScreen","ideasScreen","ideaDetailScreen","moreScreen","helpScreen","measureScreen","measureProjectScreen"].forEach(x=>document.getElementById(x).classList.toggle("hidden",x!==id));if(id!=="measureScreen"&&id!=="measureProjectScreen")document.getElementById("appRoot")?.classList.remove("ms-wide")}
+function guardLeaveSketches(){const proj=document.getElementById("measureProjectScreen");if(proj&&!proj.classList.contains("hidden")&&window.MS&&MS.leaveMeasurements&&!MS.leaveMeasurements())return false;return true}
+function showNotes(){if(!guardLeaveSketches())return;saveCurrent();screens("notesScreen");render()}
 function render(){
   const q=document.getElementById("search").value.toLowerCase();
-  const a=notes.filter(n=>!n.trash&&n.title!=="__IDEAS__"&&n.title!=="Grocery List"&&(!pinnedOnly||n.pinned)&&((n.title+" "+n.body+" "+(n.items||[]).map(i=>i.t).join(" ")).toLowerCase().includes(q))).sort((a,b)=>(b.pinned-a.pinned)||(b.modified-a.modified));
+  const a=notes.filter(n=>!n.trash&&n.title!=="__IDEAS__"&&n.title!=="__SKETCHES__"&&n.title!=="Grocery List"&&(!pinnedOnly||n.pinned)&&((n.title+" "+n.body+" "+(n.items||[]).map(i=>i.t).join(" ")).toLowerCase().includes(q))).sort((a,b)=>(b.pinned-a.pinned)||(b.modified-a.modified));
   document.getElementById("pinnedBtn").textContent=pinnedOnly?"📌 Showing Pinned":"📌 Pinned";
   const el=document.getElementById("notes");
   el.innerHTML=a.length?a.map(n=>`<div class="card" onclick="openNote('${n.id}')"><h3>${n.pinned?"📌 ":""}${esc(n.title||"Untitled")}</h3><div class="preview">${n.type==="check"?(n.items.filter(i=>!i.done).length+" items left"):esc((n.body||"").slice(0,110))}</div><div class="meta">${new Date(n.modified).toLocaleString()}</div></div>`).join(""):`<div class="empty">No notes found.</div>`;
@@ -501,7 +727,7 @@ function groceryNote(){
  return g;
 }
 let groceryTab="shopping";
-function openGrocery(){saveCurrent();screens("groceryScreen");showGroceryTab(groceryTab);renderGrocery()}
+function openGrocery(){if(!guardLeaveSketches())return;saveCurrent();screens("groceryScreen");showGroceryTab(groceryTab);renderGrocery()}
 function showGroceryTab(tab){
  groceryTab=tab;
  document.getElementById("groceryShoppingPanel").classList.toggle("hidden",tab!=="shopping");
@@ -672,7 +898,7 @@ function ideasNote(){
  });
  return n;
 }
-function showIdeas(){saveCurrent();currentIdeaTopicId=null;screens("ideasScreen");renderIdeas()}
+function showIdeas(){if(!guardLeaveSketches())return;saveCurrent();currentIdeaTopicId=null;screens("ideasScreen");renderIdeas()}
 function renderIdeas(){
  const n=ideasNote(),q=(document.getElementById("ideaSearch")?.value||"").trim().toLowerCase();
  const topics=n.items.filter(i=>(i.title+" "+(i.description||"")+" "+(i.thoughts||[]).map(t=>t.t).join(" ")+" "+(i.checklist||[]).map(t=>t.t).join(" ")+" "+(i.photos||[]).map(p=>p.caption||"").join(" ")).toLowerCase().includes(q));
@@ -717,7 +943,7 @@ function listen(){
     r.onresult=e=>command(e.results[0][0].transcript);r.start();
   }catch(e){document.getElementById("voiceStatus").textContent="Voice recognition could not start. You can type the command below."}
 }
-function showMore(){saveCurrent();screens("moreScreen");renderTrash()}
+function showMore(){if(!guardLeaveSketches())return;saveCurrent();screens("moreScreen");renderTrash()}
 function renderTrash(){const a=notes.filter(n=>n.trash);document.getElementById("trash").innerHTML=a.length?a.map(n=>`<div class="row"><span style="flex:1">${esc(n.title||"Untitled")}</span><button class="secondary" onclick="restore('${n.id}')">Restore</button><button class="danger" onclick="purge('${n.id}')">Delete</button></div>`).join(""):"Trash is empty."}
 function restore(id){const n=notes.find(n=>n.id===id);if(!n)return;n.trash=false;n.modified=Date.now();persist();renderTrash()}
 async function purge(id){if(confirm("Delete permanently? This cannot be undone.")){notes=notes.filter(n=>n.id!==id);localSave();await deleteCloudNote(id);renderTrash();render()}}
@@ -781,12 +1007,13 @@ const notepadHelpTopics=[
  ['Cloud sync and offline use','Cloud synced means the current notes were sent to your account. Saved locally or Sync problem means keep this device copy until sync succeeds. Cloud sync is not a separate historical backup: a synced change or deletion can reach other devices. Photos are stored separately; full backups include their bytes.'],
  ['Trash and settings','More contains Trash, where you can restore a note or permanently delete it. Text size can be Normal, Large or Extra Large. Forgotten passwords can be reset from the sign-in screen.'],
  ['Voice commands','Voice commands can add groceries, create a note, find a note or add a to-do. Browser microphone support varies. Type a command if the microphone is unavailable.'],
- ['Top and Home','Top scrolls to the top of the current screen. Home saves the open note and returns to Notes. Grocery, Ideas and More remain in the bottom menu. Version 1.4.2026.10.10 appears in More.']
+ ['Top and Home','Top scrolls to the top of the current screen. Home saves the open note and returns to Notes. Grocery, Ideas, Measure and More remain in the bottom menu. Version 1.5.2026.10.30 appears in More.'],
+ ['Measurements and Sketches','Open Measure in the bottom menu. Create a project, then use Draw From Measurements to enter real sizes such as 36 by 24 inches. Dimension arrows stay attached to the shape. Change a size and the drawing updates. Use the List tab for board cut lists and keyboard dictation. Photos can hold typed reference arrows; a photo alone does not prove real-world scale. Projects save with your notes under a hidden Sketches record and sync with your account.']
 ];
 function showNotepadHelp(){saveCurrent();current=null;screens('helpScreen');renderNotepadHelp()}
 function renderNotepadHelp(){const root=document.getElementById('notepadHelpTopics'),q=document.getElementById('notepadHelpSearch').value.toLowerCase();root.replaceChildren();for(const [title,text]of notepadHelpTopics.filter(x=>x.join(' ').toLowerCase().includes(q))){const card=document.createElement('div');card.className='card help';const heading=document.createElement('h3');heading.textContent=title;const paragraph=document.createElement('p');paragraph.textContent=text;card.append(heading,paragraph);root.append(card)}if(!root.children.length)root.textContent='No instructions match that search.'}
 let notepadBackupBusy=false;
-function backupPhotoPaths(list){const paths=new Set();for(const n of list)for(const item of n.items||[]){if(item.photoPath)paths.add(item.photoPath);for(const photo of item.photos||[]){const path=typeof photo==='string'?photo:photo.path;if(path)paths.add(path)}}return [...paths]}
+function backupPhotoPaths(list){const paths=new Set();for(const n of list)for(const item of n.items||[]){if(item.photoPath)paths.add(item.photoPath);for(const photo of item.photos||[]){const path=typeof photo==='string'?photo:photo.path;if(path)paths.add(path)}if(n.title==='__SKETCHES__'){for(const photo of item.photos||[]){const path=typeof photo==='string'?photo:photo.path;if(path)paths.add(path)}}}return [...paths]}
 function backupBlobData(blob){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('Could not read a photo.'));reader.readAsDataURL(blob)})}
 function checkNotepadBackupOwner(owner){if(currentUser?.id!==owner)throw new Error('The signed-in account changed. Please try again.')}
 async function downloadNotepadBackup(){
@@ -800,14 +1027,14 @@ async function downloadNotepadBackup(){
 }
 function validateNotepadBackup(value,owner){
  if(value?.app!=='Old Carpenter Notepad'||value.format!==1||value.owner!==owner||!Array.isArray(value.notes)||!Array.isArray(value.photos))throw new Error('Choose a Notepad backup from this same account.');
- const ids=new Set();for(const n of value.notes){if(!n||typeof n.id!=='string'||!n.id||ids.has(n.id)||typeof n.title!=='string'||typeof n.body!=='string'||!Array.isArray(n.items)||!Number.isFinite(n.modified))throw new Error('Invalid note in backup.');ids.add(n.id);if(n.title==='__IDEAS__'&&n.items.some(i=>!i||typeof i.id!=='string'||!i.id||!Array.isArray(i.thoughts)||!Array.isArray(i.photos)||typeof i.title!=='string'))throw new Error('Invalid Ideas entries in backup.');if(n.title==='Grocery List'&&n.items.some(i=>!i||typeof i.t!=='string'))throw new Error('Invalid grocery entries in backup.')}
+ const ids=new Set();for(const n of value.notes){if(!n||typeof n.id!=='string'||!n.id||ids.has(n.id)||typeof n.title!=='string'||typeof n.body!=='string'||!Array.isArray(n.items)||!Number.isFinite(n.modified))throw new Error('Invalid note in backup.');ids.add(n.id);if(n.title==='__IDEAS__'&&n.items.some(i=>!i||typeof i.id!=='string'||!i.id||!Array.isArray(i.thoughts)||!Array.isArray(i.photos)||typeof i.title!=='string'))throw new Error('Invalid Ideas entries in backup.');if(n.title==='__SKETCHES__'&&n.items.some(i=>!i||typeof i.id!=='string'||!i.id||typeof i.name!=='string'||!Array.isArray(i.drawings)||!Array.isArray(i.measurementList)||!Array.isArray(i.photos)))throw new Error('Invalid Measurements & Sketches entries in backup.');if(n.title==='Grocery List'&&n.items.some(i=>!i||typeof i.t!=='string'))throw new Error('Invalid grocery entries in backup.')}
  const photos=new Map();for(const p of value.photos){if(!p||typeof p.path!=='string'||photos.has(p.path)||typeof p.data!=='string'||!/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(p.data))throw new Error('Invalid photo in backup.');photos.set(p.path,p.data)}
  for(const path of backupPhotoPaths(value.notes))if(!photos.has(path))throw new Error('The backup is missing a referenced photo.');return photos;
 }
 function missingNotepadRestoreRows(existing,backup){
- const rows=[];for(const source of backup){const same=existing.find(n=>n.id===source.id);const special=['Grocery List','__IDEAS__'].includes(source.title);const target=special?(existing.find(n=>!n.trash&&n.title===source.title)||same):same;
+ const rows=[];for(const source of backup){const same=existing.find(n=>n.id===source.id);const special=['Grocery List','__IDEAS__','__SKETCHES__'].includes(source.title);const target=special?(existing.find(n=>!n.trash&&n.title===source.title)||same):same;
  if(!target){rows.push(JSON.parse(JSON.stringify(source)));continue}
- if(special){const key=i=>source.title==='__IDEAS__'?i.id:String(i.t||'').trim().toLowerCase();const present=new Set(target.items.map(key));const missing=source.items.filter(i=>!present.has(key(i)));if(missing.length)rows.push({...JSON.parse(JSON.stringify(target)),items:[...JSON.parse(JSON.stringify(target.items)),...JSON.parse(JSON.stringify(missing))],modified:Date.now()})}
+ if(special){const key=i=>source.title==='__IDEAS__'||source.title==='__SKETCHES__'?i.id:String(i.t||'').trim().toLowerCase();const present=new Set(target.items.map(key));const missing=source.items.filter(i=>!present.has(key(i)));if(missing.length)rows.push({...JSON.parse(JSON.stringify(target)),items:[...JSON.parse(JSON.stringify(target.items)),...JSON.parse(JSON.stringify(missing))],modified:Date.now()})}
  }return rows;
 }
 async function restoreNotepadBackup(event){
@@ -830,7 +1057,7 @@ boot();
 if("serviceWorker" in navigator){
   window.addEventListener("load",async()=>{
     try{
-      const reg=await navigator.serviceWorker.register("./service-worker.js?v=9",{updateViaCache:"none"});
+      const reg=await navigator.serviceWorker.register("./service-worker.js?v=10",{updateViaCache:"none"});
       await reg.update().catch(()=>{});
       let reloading=false;
       navigator.serviceWorker.addEventListener("controllerchange",()=>{
