@@ -1,0 +1,26 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>MS Self Test</title></head>
+<body>
+<pre id="out">Running…</pre>
+<script>
+  // Minimal stubs so measurements.js can load without the full app.
+  window.notes = [];
+  window.persist = function () {};
+  window.setSyncStatus = function () {};
+  window.hydratePhotoUrls = async function () {};
+  window.uploadAppPhoto = async function () { return "test/path.jpg"; };
+  window.deleteAppPhoto = async function () {};
+  window.signedPhotoUrl = async function () { return ""; };
+  window.friendlyError = function (e) { return String(e); };
+  window.screens = function () {};
+  window.saveCurrent = function () {};
+  window.esc = function (s) { return String(s || "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m])); };
+</script>
+<script src="./measurements.js"></script>
+<script>
+  const r = MS.selfTest();
+  const fails = r.results.filter(x => !x.pass);
+  document.getElementById("out").textContent = JSON.stringify({ passed: r.passed, failed: r.failed, fails }, null, 2);
+  console.log("MS_SELFTEST", r);
+</script>
+</body></html>
